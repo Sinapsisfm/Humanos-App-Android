@@ -99,9 +99,10 @@ fun DashboardScreen(
                         text = task.title,
                         style = MaterialTheme.typography.titleSmall,
                     )
-                    if (task.description != null) {
+                    val desc = task.description
+                    if (desc != null) {
                         Text(
-                            text = task.description,
+                            text = desc,
                             style = MaterialTheme.typography.bodyMedium,
                         )
                     }
