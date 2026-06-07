@@ -31,6 +31,9 @@ dependencies {
     // Data modules
     implementation(project(":data:data-auth"))
 
+    // Icons (extended set for navigation icons)
+    implementation(libs.androidx.compose.material.icons.extended)
+
     // AndroidX
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

@@ -1,9 +1,17 @@
 package eco.humanos.android.integrations.quebot
 
 /**
- * Retrofit + SSE interfaces for the QueBot pipeline.
- * Full implementation in Tanda 5.
+ * Retrofit + OkHttp SSE interface for low-level HTTP calls to the QueBot pipeline.
+ *
+ * Higher-level business logic lives in [QuebotGateway]; this interface
+ * is the raw Retrofit contract used by the gateway implementation.
+ * Endpoints will be annotated when the real gateway is wired.
  */
 interface QuebotApiService {
-    // Chat endpoints + SSE stream will be added when API contracts are finalized
+    // @POST("api/chat")
+    // @Streaming
+    // suspend fun sendMessage(@Body body: ChatRequest): ResponseBody
+
+    // @GET("api/health")
+    // suspend fun healthCheck(): Response<ServiceStatus>
 }

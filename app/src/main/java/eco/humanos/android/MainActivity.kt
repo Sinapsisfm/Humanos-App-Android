@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import dagger.hilt.android.AndroidEntryPoint
 import eco.humanos.android.core.ui.theme.HumanosTheme
+import eco.humanos.android.navigation.HumanosApp
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -14,7 +15,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             HumanosTheme {
-                // TODO: NavHost — wired in Tanda 6 (navigation)
+                HumanosApp()
             }
         }
     }

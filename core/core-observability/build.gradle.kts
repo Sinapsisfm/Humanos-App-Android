@@ -8,6 +8,8 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:core-model"))
+
     implementation(libs.timber)
     implementation(libs.kotlinx.coroutines.android)
 }
