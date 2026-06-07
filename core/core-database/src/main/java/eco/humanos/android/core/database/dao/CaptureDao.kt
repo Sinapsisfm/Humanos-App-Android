@@ -1,22 +1,27 @@
 package eco.humanos.android.core.database.dao
 
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import eco.humanos.android.core.database.entity.CaptureEntity
+import kotlinx.coroutines.flow.Flow
+
 /**
- * Phase 1 stub -- Room DAO interface for local capture persistence.
- *
- * Actual Room annotations (@Query, @Insert, @Delete, @Update) will be
- * added when the database schema is wired in a later phase. For now
- * this serves as a compile-time contract that higher layers can depend on.
+ * Local persistence contract for captures.
  */
+@Dao
 interface CaptureDao {
-    // @Insert(onConflict = OnConflictStrategy.REPLACE)
-    // suspend fun upsert(capture: CaptureEntity)
 
-    // @Query("SELECT * FROM captures ORDER BY created_at DESC")
-    // fun observeAll(): Flow<List<CaptureEntity>>
+    @Query("SELECT * FROM captures ORDER BY createdAt DESC")
+    fun observeAll(): Flow<List<CaptureEntity>>
 
-    // @Query("SELECT * FROM captures WHERE id = :captureId")
-    // suspend fun getById(captureId: String): CaptureEntity?
+    @Query("SELECT * FROM captures WHERE id = :id")
+    suspend fun getById(id: String): CaptureEntity?
 
-    // @Delete
-    // suspend fun delete(capture: CaptureEntity)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(entity: CaptureEntity)
+
+    @Query("DELETE FROM captures WHERE id = :id")
+    suspend fun deleteById(id: String)
 }

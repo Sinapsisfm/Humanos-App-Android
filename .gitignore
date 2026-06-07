@@ -51,3 +51,4 @@ desktop.ini
 
 # Node (if using any tooling)
 node_modules/
+.kotlin/
