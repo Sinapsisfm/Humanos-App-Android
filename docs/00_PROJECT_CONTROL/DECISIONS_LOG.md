@@ -141,6 +141,16 @@
 
 ---
 
+## DEC-013: Adelantar data-capture a Phase 1
+
+- **Fecha:** 2026-06-07
+- **Decision:** El modulo `data-capture` (originalmente planificado Phase 2, MOD-025) se adelanta a Phase 1 como MOD-016. Implementa `CaptureRepository` usando el `CaptureDao` de Room.
+- **Contexto:** Tras wirear Room (DEC-012/Tanda 13), tener la base de datos sin un repository que la use no aporta valor. `feature-capture` ya existe en Phase 1; conectarla a persistencia real (capturas que sobreviven al cierre de la app) es el cierre natural del loop UI -> ViewModel -> Repository -> Room.
+- **Consecuencias:** Phase 1 pasa de 15 a 16 modulos. `feature-capture` depende de `data-capture`. El patron repository queda establecido para replicar en `data-tasks` y otros. `core-model` sigue puro (entities en core-database, mappers bridge).
+- **Refs:** DEC-002, DEC-003, DEC-012, TASK-007
+
+---
+
 ## Indice rapido
 
 | ID | Titulo | Fecha |
@@ -157,3 +167,4 @@
 | DEC-010 | compileSdk 36 preferente | 2026-06-06 |
 | DEC-011 | core-observability en Phase 1 | 2026-06-07 |
 | DEC-012 | TraceEvent canonico en core-model | 2026-06-07 |
+| DEC-013 | Adelantar data-capture a Phase 1 | 2026-06-07 |

@@ -7,7 +7,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":core:core-observability"))
+    implementation(project(":data:data-capture"))
 
     implementation(libs.androidx.compose.material.icons.extended)
 }

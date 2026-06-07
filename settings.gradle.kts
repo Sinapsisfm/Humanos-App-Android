@@ -44,6 +44,7 @@ include(":core:core-observability")
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 include(":data:data-auth")
+include(":data:data-capture")
 
 // ── Feature ──────────────────────────────────────────────────────────────────
 include(":feature:feature-dashboard")

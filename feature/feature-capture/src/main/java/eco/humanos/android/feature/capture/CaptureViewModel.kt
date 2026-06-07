@@ -3,9 +3,8 @@ package eco.humanos.android.feature.capture
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import eco.humanos.android.core.model.common.IntegrationSource
-import eco.humanos.android.core.model.common.TraceEvent
-import eco.humanos.android.core.observability.TraceRepository
+import eco.humanos.android.core.model.capture.CaptureItem
+import eco.humanos.android.data.capture.repository.CaptureRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,17 +14,26 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CaptureViewModel @Inject constructor(
-    private val traceRepository: TraceRepository,
+    private val captureRepository: CaptureRepository,
 ) : ViewModel() {
 
     data class CaptureUiState(
         val textInput: String = "",
         val isSaving: Boolean = false,
         val savedMessage: String? = null,
+        val captures: List<CaptureItem> = emptyList(),
     )
 
     private val _uiState = MutableStateFlow(CaptureUiState())
     val uiState: StateFlow<CaptureUiState> = _uiState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            captureRepository.observeCaptures().collect { captures ->
+                _uiState.update { it.copy(captures = captures) }
+            }
+        }
+    }
 
     fun updateText(text: String) {
         _uiState.update { it.copy(textInput = text, savedMessage = null) }
@@ -36,18 +44,7 @@ class CaptureViewModel @Inject constructor(
         if (text.isBlank()) return
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
-            traceRepository.logEvent(
-                TraceEvent(
-                    id = java.util.UUID.randomUUID().toString(),
-                    entityType = "capture",
-                    entityId = java.util.UUID.randomUUID().toString(),
-                    action = "created",
-                    source = IntegrationSource.LOCAL,
-                    userId = "local-user",
-                    metadata = null,
-                    timestamp = System.currentTimeMillis(),
-                ),
-            )
+            captureRepository.saveTextCapture(text)
             _uiState.update {
                 it.copy(textInput = "", isSaving = false, savedMessage = "Captura guardada")
             }

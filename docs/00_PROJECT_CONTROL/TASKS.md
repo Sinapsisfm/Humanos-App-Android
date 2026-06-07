@@ -119,7 +119,7 @@
 
 ### TASK-007: Crear Room database + DAOs en core-database
 
-- **Estado:** `[PENDING]`
+- **Estado:** `[DONE]` (Tanda 13, commit 025db31)
 - **Prioridad:** Media
 - **Descripcion:** Implementar la base de datos Room local:
   - `HumanosDatabase` (abstract class, Room database)
@@ -253,7 +253,7 @@
 | TASK-004 | Crear los 15 modulos Phase 1 | `[DONE]` | Alta |
 | TASK-005 | Crear modelos Kotlin en core-model | `[DONE]` | Alta |
 | TASK-006 | Crear interfaces (repos + gateways) | `[DONE]` | Media |
-| TASK-007 | Crear Room database + DAOs | `[PENDING]` | Media |
+| TASK-007 | Crear Room database + DAOs | `[DONE]` | Media |
 | TASK-008 | Crear pantallas skeleton Compose + nav | `[DONE]` | Media |
 | TASK-009 | Confirmar applicationId definitivo | `[PENDING]` | Alta |
 | TASK-010 | Disenar contrato mobile/exchange | `[PENDING]` | Media |

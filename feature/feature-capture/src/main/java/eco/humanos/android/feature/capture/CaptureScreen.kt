@@ -9,11 +9,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AttachFile
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -23,13 +26,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import eco.humanos.android.core.model.capture.CaptureItem
+import java.util.concurrent.TimeUnit
 
 /**
  * Capture feature screen -- quick-entry form for notes, ideas, and
  * pending items with shortcuts for photo, voice, and file attachment.
+ * Persisted captures are listed below the entry form.
  */
 @Composable
 fun CaptureScreen(
@@ -100,5 +107,65 @@ fun CaptureScreen(
                 color = MaterialTheme.colorScheme.primary,
             )
         }
+
+        if (uiState.captures.isNotEmpty()) {
+            Text(
+                text = "Capturas recientes",
+                style = MaterialTheme.typography.titleMedium,
+            )
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(uiState.captures, key = { it.id }) { capture ->
+                    CaptureCard(capture = capture)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CaptureCard(
+    capture: CaptureItem,
+    modifier: Modifier = Modifier,
+) {
+    Card(modifier = modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = capture.textContent ?: capture.title ?: "(sin contenido)",
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = relativeTime(capture.createdAt),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/**
+ * Best-effort relative-time label for a capture timestamp.
+ * Pure function over [System.currentTimeMillis] so it needs no locale data.
+ */
+private fun relativeTime(epochMillis: Long): String {
+    val deltaMillis = (System.currentTimeMillis() - epochMillis).coerceAtLeast(0L)
+    val minutes = TimeUnit.MILLISECONDS.toMinutes(deltaMillis)
+    val hours = TimeUnit.MILLISECONDS.toHours(deltaMillis)
+    val days = TimeUnit.MILLISECONDS.toDays(deltaMillis)
+    return when {
+        minutes < 1L -> "hace un momento"
+        minutes < 60L -> "hace ${minutes} min"
+        hours < 24L -> "hace ${hours} h"
+        days < 7L -> "hace ${days} d"
+        else -> "hace ${days / 7L} sem"
     }
 }
