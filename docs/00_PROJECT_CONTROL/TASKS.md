@@ -42,7 +42,7 @@
 
 ### TASK-003: Crear proyecto Gradle con build-logic convention plugins
 
-- **Estado:** `[PENDING]`
+- **Estado:** `[DONE]` (Tanda 4, commit c03af1e)
 - **Prioridad:** Alta
 - **Descripcion:** Crear la estructura Gradle raiz del proyecto Android:
   - `settings.gradle.kts` con version catalogs
@@ -57,9 +57,9 @@
 
 ---
 
-### TASK-004: Crear los 14 modulos Phase 1
+### TASK-004: Crear los 15 modulos Phase 1
 
-- **Estado:** `[PENDING]`
+- **Estado:** `[DONE]` (Tanda 4, commit c03af1e)
 - **Prioridad:** Alta
 - **Descripcion:** Crear los 14 modulos definidos en DEC-006 como modulos Gradle vacios con `build.gradle.kts` y dependencias correctas entre ellos:
   - `app` (Android Application)
@@ -84,7 +84,7 @@
 
 ### TASK-005: Crear modelos Kotlin en core-model
 
-- **Estado:** `[PENDING]`
+- **Estado:** `[DONE]` (Tanda 5, commit 22f00be)
 - **Prioridad:** Alta
 - **Descripcion:** Definir los data classes y sealed interfaces centrales del dominio en `core-model`:
   - `CaptureItem` (captura universal: texto, foto, audio, archivo)
@@ -102,7 +102,7 @@
 
 ### TASK-006: Crear interfaces (repositories + gateways)
 
-- **Estado:** `[PENDING]`
+- **Estado:** `[DONE]` (Tanda 6, commit 116adfc)
 - **Prioridad:** Media
 - **Descripcion:** Definir las interfaces de repositorio y gateway que separan dominio de implementacion:
   - `AuthRepository` (login, logout, token refresh, auth state flow)
@@ -135,7 +135,7 @@
 
 ### TASK-008: Crear pantallas skeleton Compose + navegacion
 
-- **Estado:** `[PENDING]`
+- **Estado:** `[DONE]` (Tanda 6, commit 116adfc)
 - **Prioridad:** Media
 - **Descripcion:** Crear pantallas Compose minimas con navegacion funcional:
   - `DashboardScreen` (feature-dashboard) -- pantalla principal con lista de captures y tareas
@@ -249,11 +249,11 @@
 |----|-------------|--------|-----------|
 | TASK-001 | Crear estructura docs completa | `[DONE]` | Alta |
 | TASK-002 | Crear ADRs 0001-0004 | `[DONE]` | Alta |
-| TASK-003 | Crear proyecto Gradle con build-logic | `[PENDING]` | Alta |
-| TASK-004 | Crear los 15 modulos Phase 1 | `[PENDING]` | Alta |
-| TASK-005 | Crear modelos Kotlin en core-model | `[PENDING]` | Alta |
-| TASK-006 | Crear interfaces (repos + gateways) | `[PENDING]` | Media |
+| TASK-003 | Crear proyecto Gradle con build-logic | `[DONE]` | Alta |
+| TASK-004 | Crear los 15 modulos Phase 1 | `[DONE]` | Alta |
+| TASK-005 | Crear modelos Kotlin en core-model | `[DONE]` | Alta |
+| TASK-006 | Crear interfaces (repos + gateways) | `[DONE]` | Media |
 | TASK-007 | Crear Room database + DAOs | `[PENDING]` | Media |
-| TASK-008 | Crear pantallas skeleton Compose + nav | `[PENDING]` | Media |
+| TASK-008 | Crear pantallas skeleton Compose + nav | `[DONE]` | Media |
 | TASK-009 | Confirmar applicationId definitivo | `[PENDING]` | Alta |
 | TASK-010 | Disenar contrato mobile/exchange | `[PENDING]` | Media |

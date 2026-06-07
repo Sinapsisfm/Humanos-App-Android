@@ -1,64 +1,90 @@
 # CURRENT_STATE -- humanOS Native Android
 
-> Ultima actualizacion: 2026-06-06
+> Ultima actualizacion: 2026-06-07 (Tanda 7)
 
 ## Estado general
 
-**Fase actual:** Pre-desarrollo -- documentacion y planificacion completadas, skeleton pendiente.
+**Fase actual:** Phase 1 — skeleton Android funcional con modelos, interfaces, y navegacion.
 
-El repositorio fue creado hoy. No existe aun ningun proyecto Android (ni `build.gradle.kts`, ni modulos, ni `google-services.json`). La fase de inspeccion READ-ONLY de HumanOS y QueBot fue completada en sesiones previas. Este proyecto es **independiente**: no comparte codigo fuente con HumanOS ni QueBot; se integra con ellos via interfaces Gateway.
+El repositorio tiene un proyecto Android Gradle multi-modulo con 15 modulos Phase 1, 27 modelos Kotlin, 6 interfaces (repositories + gateways), 2 implementaciones mock (FakeHumanosGateway, FakeQuebotGateway), navegacion Compose con 3 pantallas, y documentacion completa de control.
 
-## Decisiones clave tomadas
+**No compilado localmente** — Java/Android SDK no estan instalados en este equipo Windows. El build se validara en Android Studio o CI.
 
-| Area | Decision | Detalle |
-|------|----------|---------|
-| Independencia | Proyecto standalone | HumanOS y QueBot son fuentes externas read-only. Sin monorepo compartido |
-| Lenguaje | Kotlin | 100% Kotlin, sin Java |
-| UI | Jetpack Compose + Material 3 | Sin XML layouts. Material 3 Dynamic Color |
-| DI | Hilt | Dagger-Hilt con KSP |
-| Persistencia local | Room + DataStore | Room para entidades estructuradas, DataStore para preferences |
-| Background | WorkManager | Para sync diferida y tareas offline |
-| Arquitectura modular | 14 modulos Phase 1 | app, core-model, core-database, core-datastore, core-network, core-security, core-ui, data-auth, feature-dashboard, feature-capture, feature-settings, integration-humanos, integration-quebot, testing-common |
-| CI/CD | GitHub Actions | Firebase App Distribution para betas, Google Play para produccion |
-| Firebase | Proyecto `humanos-app` | GCP project compartido. No existe `google-services.json` aun |
-| compileSdk | 36 preferido (35 fallback) | API 36 = Android 16. Si SDK 36 no esta disponible en CI, fallback temporal a 35 con TASK para subir |
-| Auth | Dual-token | Firebase ID token para QueBot, bridge JWT para HumanOS via `POST /api/auth/mobile/exchange` (endpoint NO existe aun) |
+## Commits
+
+| # | Hash | Tanda | Descripcion | Archivos | Lineas |
+|---|------|-------|-------------|----------|--------|
+| 1 | `277d44c` | 2 | Documentacion inicial (38 docs) | 41 | +6,869 |
+| 2 | `2a28a10` | 3 | .gitattributes + QA documental | 1 | +29 |
+| 3 | `4d47a4b` | 3B | Correcciones QA (DEC-011, 15 modulos, Q-005, RISK-008) | 6 | +158 |
+| 4 | `c03af1e` | 4 | Proyecto Gradle Android (15 modulos, convention plugins) | 70 | +1,532 |
+| 5 | `22f00be` | 5 | Modelos Kotlin en core-model (27 modelos, 7 packages) | 29 | +676 |
+| 6 | `116adfc` | 6 | Interfaces, gateways, fakes, Navigation Compose | 20 | +807 |
+
+**Total acumulado:** ~167 archivos, ~10,071 lineas
+
+## Decisiones clave vigentes
+
+| ID | Decision | Estado |
+|----|----------|--------|
+| DEC-001 | Proyecto independiente | Vigente |
+| DEC-002 | Kotlin + Compose + Hilt + Room + Material 3 | Vigente |
+| DEC-003 | Integraciones via Gateway interfaces | Vigente, 2 gateways implementados como fakes |
+| DEC-004 | Trazabilidad documental como parte del producto | Vigente |
+| DEC-005 | CI/CD via GitHub Actions | Vigente, workflows no creados aun |
+| DEC-006 | 15 modulos Phase 1 (actualizada de 14) | Vigente, los 15 modulos existen |
+| DEC-007 | Auth dual-token | Vigente como supuesto, mock en Phase 1 |
+| DEC-008 | Bridge endpoint como contrato | Vigente, documentado en API_CONTRACTS.md |
+| DEC-009 | Merge en core-observability | Vigente, modulo creado |
+| DEC-010 | compileSdk 36 preferente | Vigente |
+| DEC-011 | core-observability en Phase 1 | Vigente |
 
 ## Lo que existe
 
-- Directorio `C:\Users\felip\Claude\humanos-android\` creado
-- Carpeta `docs/00_PROJECT_CONTROL/` creada
-- Documentacion de control de proyecto (este archivo y companeros)
+- Repositorio git con 6 commits
+- 38 archivos de documentacion con contenido real
+- 15 modulos Gradle Android (app + 7 core + 1 data + 3 feature + 2 integration + 1 testing)
+- build-logic/ con 6 convention plugins
+- gradle/libs.versions.toml version catalog completo
+- 27 modelos Kotlin en core-model (context, capture, task, health, terrain, auth, common)
+- 6 interfaces: AuthRepository, TraceRepository, HumanosGateway, QuebotGateway, CaptureDao, SseEvent
+- 2 implementaciones mock: FakeHumanosGateway, FakeQuebotGateway
+- Navegacion Compose: TopLevelDestination, HumanosNavHost, HumanosApp scaffold
+- 3 pantallas skeleton: Dashboard (cards), Capture (form), Settings (list items)
+- Material 3 theme con brand color #0A3D62
+- .gitignore, .gitattributes, LICENSE (MIT), README.md
 
-## Lo que NO existe todavia
+## Lo que NO existe
 
-- Proyecto Gradle (ni root `build.gradle.kts` ni `settings.gradle.kts`)
-- Ningun modulo Android
-- `google-services.json` (requiere configurar app en Firebase Console de `humanos-app`)
-- ADRs (Architecture Decision Records)
-- Codigo Kotlin de ningun tipo
-- CI pipeline (`.github/workflows/`)
+- `google-services.json` (requiere Firebase Console setup por Felipe)
+- Java/Android SDK en este equipo (build no verificado)
+- GitHub repo remoto (solo local)
+- CI/CD workflows (.github/workflows/)
+- Room database wiring (DAOs con Room annotations)
+- Hilt modules (DI bindings)
+- ViewModels
 - Tests
+- Sync logic
+- Real auth flow
 
-## Secuencia inmediata (next steps)
+## Preguntas abiertas (5)
 
-1. Completar estructura de documentacion (TASK-001) -- **en curso**
-2. Crear ADRs 0001-0004 (TASK-002)
-3. Crear proyecto Gradle con build-logic convention plugins (TASK-003)
-4. Crear los 14 modulos Phase 1 vacios con dependencias (TASK-004)
-5. Crear modelos Kotlin en `core-model` (TASK-005)
+| ID | Pregunta | Supuesto |
+|----|----------|----------|
+| Q-001 | Firebase project reusar humanos-app o crear nuevo | Reusar humanos-app |
+| Q-002 | CI auth WIF o SA key | WIF preferido |
+| Q-003 | applicationId definitivo | eco.humanos.android.dev (provisional) |
+| Q-004 | Google Play Console existe | No, pendiente crear |
+| Q-005 | Licencia MIT o propietaria | MIT mientras sea skeleton |
 
-## Inspecciones realizadas (read-only)
+## Riesgos activos (8)
 
-- **HumanOS** (`C:\Users\felip\humanos-eco\`): Inspeccionado schema Prisma, API routes, auth middleware. Identificado que el endpoint `POST /api/auth/mobile/exchange` no existe y debe disenarse como contrato futuro.
-- **QueBot legacy** (`C:\Users\felip\Claude\quebot_debug\`): Inspeccionado estructura PHP, flujo WhatsApp, EventForwarder. Confirmado que integracion sera via Firebase Auth token existente.
-- **QueBot v2** (`C:\Users\felip\Claude\quebot-v2\`): Inspeccionado pipeline Anthropic SDK. No aplica directamente al Android nativo.
+Ver RISKS.md para detalle completo.
 
-## Dependencias externas bloqueantes
+## Proxima accion recomendada
 
-| Dependencia | Bloquea | Estado | Mitigacion |
-|-------------|---------|--------|------------|
-| `google-services.json` | Firebase Auth real | No existe | Mock auth en Phase 1 |
-| `POST /api/auth/mobile/exchange` | Auth bridge HumanOS | No implementado | Documentar contrato, mock gateway |
-| Firebase project `humanos-app` confirmacion | Config definitiva | Supuesto, no confirmado | Q-001 abierta |
-| applicationId definitivo | Play Store publish | No confirmado | Q-003 abierta, RISK-007 documentado |
+1. Felipe: Instalar Java 21 + Android Studio (o confirmar equipo de desarrollo)
+2. Felipe: Crear app Android en Firebase Console (proyecto humanos-app) → descargar google-services.json
+3. Felipe: Confirmar applicationId definitivo (Q-003)
+4. Claude: Crear GitHub repo remoto + push + CI workflow (Tanda 8)
+5. Claude: Wiring Room + Hilt + ViewModels (Tanda 9-10)
