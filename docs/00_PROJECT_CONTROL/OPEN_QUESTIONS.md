@@ -61,6 +61,19 @@
 
 ---
 
+## Q-005: Titularidad y licencia del proyecto
+
+- **Fecha abierta:** 2026-06-07
+- **Estado:** Abierta
+- **Pregunta:** El proyecto humanOS Android sera open-source (MIT) o propietario (copyright Sinapsis SpA sin permiso de uso)? La licencia actual es MIT, lo que permite uso irrestricto por terceros.
+- **Supuesto operativo:** MIT mientras sea skeleton sin logica propietaria. Se revisara cuando se implemente logica de negocio (Phase 2+).
+- **Contexto:** Phase 1 es arquitectura publica (patterns, conventions). No hay IP propietaria en el skeleton. Pero Phase 2+ incluira logica de Context Engine, agents, y adaptaciones de QueBot que podrian ser IP de Sinapsis.
+- **Impacto si el supuesto es incorrecto:** Si Felipe quiere propietario desde el inicio, hay que cambiar LICENSE ahora antes de hacer el repo publico.
+- **Quien decide:** Felipe
+- **Refs:** RISK-008
+
+---
+
 ## Indice rapido
 
 | ID | Pregunta | Estado | Quien decide |
@@ -69,3 +82,4 @@
 | Q-002 | CI auth strategy (WIF vs SA key) | Abierta | Felipe |
 | Q-003 | applicationId definitivo | Abierta | Felipe |
 | Q-004 | Google Play Console existe? | Abierta | Felipe |
+| Q-005 | Titularidad y licencia (MIT vs propietaria) | Abierta | Felipe |

@@ -3,11 +3,11 @@
 > humanOS Native Android -- Complete Module Inventory
 > Last updated: 2026-06-06
 
-## Phase 1 Modules (14 modules -- current)
+## Phase 1 Modules (15 modules -- current, updated 2026-06-07 per DEC-011)
 
 | MOD-ID | Name | Layer | Phase | Dependencies | Description |
 |---|---|---|---|---|---|
-| MOD-001 | `:app` | application | 1 | all feature modules, core-ui, data-auth | Application entry point. `@HiltAndroidApp`, `MainActivity`, `NavHost`, splash screen. |
+| MOD-001 | `:app` | application | 1 | all feature modules, core-ui, core-observability, data-auth | Application entry point. `@HiltAndroidApp`, `MainActivity`, `NavHost`, splash screen. |
 | MOD-002 | `:core-model` | core | 1 | none | All shared data classes, enums, Room `@Entity` classes, sealed result types. Zero Android framework dependency. |
 | MOD-003 | `:core-database` | core | 1 | core-model(api) | Room database definition, all `@Dao` interfaces, `@TypeConverter` classes, migration helpers. Exports schema JSON for CI diff. |
 | MOD-004 | `:core-datastore` | core | 1 | core-model | Jetpack DataStore preferences. User session state, theme preference, onboarding flags, last-sync timestamps. |
@@ -21,6 +21,7 @@
 | MOD-012 | `:integration-humanos` | integration | 1 | core-network, core-model | Retrofit service interfaces for HumanOS API. DTO classes. `HumanosGateway` interface. `FakeHumanosGateway` for offline/testing. |
 | MOD-013 | `:integration-quebot` | integration | 1 | core-network, core-model | Retrofit service + SSE client for QueBot. DTO classes. `QuebotGateway` interface. `FakeQuebotGateway` with canned responses. |
 | MOD-014 | `:testing-common` | testing | 1 | core-model | Shared test utilities. Fake dispatchers (`TestDispatcherRule`), model fixtures (`TestFixtures.kt`), Room in-memory DB helper, fake `NetworkMonitor`. |
+| MOD-015 | `:core-observability` | core | 1 | core-model, core-database | TraceEvent logging infrastructure, structured logging, audit trail persistence, retention policies. Models live in core-model; this module provides write/query implementation. (Added per DEC-011) |
 
 ## Phase 2 Modules (planned -- ~12 modules)
 

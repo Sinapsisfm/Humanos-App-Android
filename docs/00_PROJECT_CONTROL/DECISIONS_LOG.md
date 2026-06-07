@@ -52,10 +52,10 @@
 
 ---
 
-## DEC-006: 14 modulos Phase 1
+## DEC-006: 15 modulos Phase 1 (actualizada 2026-06-07)
 
-- **Fecha:** 2026-06-06
-- **Decision:** Phase 1 tiene exactamente 14 modulos Gradle:
+- **Fecha:** 2026-06-06 (actualizada 2026-06-07 por DEC-011)
+- **Decision:** Phase 1 tiene exactamente 15 modulos Gradle (originalmente 14, +1 core-observability por DEC-011):
 
 | Modulo | Tipo | Proposito |
 |--------|------|-----------|
@@ -121,6 +121,16 @@
 
 ---
 
+## DEC-011: core-observability entra en Phase 1
+
+- **Fecha:** 2026-06-07
+- **Decision:** `core-observability` se incluye en Phase 1 como modulo 15. Contiene la infraestructura de TraceEvent logging, structured logging, y audit trail. Los modelos (`TraceEvent`, `SourceReference`) viven en `core-model`; `core-observability` provee la implementacion (escritura a Room, retention, query).
+- **Contexto:** GPT identifico en revision de Tanda 3 que dejar observabilidad para Phase 2 contradice DEC-004 (trazabilidad como parte del producto). Si la trazabilidad es core, su infraestructura tambien lo es.
+- **Consecuencias:** Phase 1 pasa de 14 a 15 modulos. DEC-006 se actualiza para reflejar 15 modulos. MODULE_MAP se actualiza con MOD-015.
+- **Refs:** DEC-004, DEC-006 (actualizada), DEC-009
+
+---
+
 ## Indice rapido
 
 | ID | Titulo | Fecha |
@@ -130,8 +140,9 @@
 | DEC-003 | Integraciones via Gateway | 2026-06-06 |
 | DEC-004 | Trazabilidad documental | 2026-06-06 |
 | DEC-005 | CI/CD GitHub Actions | 2026-06-06 |
-| DEC-006 | 14 modulos Phase 1 | 2026-06-06 |
+| DEC-006 | 15 modulos Phase 1 (actualizada) | 2026-06-07 |
 | DEC-007 | Auth dual-token | 2026-06-06 |
 | DEC-008 | Bridge endpoint como contrato | 2026-06-06 |
 | DEC-009 | Merge en core-observability | 2026-06-06 |
 | DEC-010 | compileSdk 36 preferente | 2026-06-06 |
+| DEC-011 | core-observability en Phase 1 | 2026-06-07 |

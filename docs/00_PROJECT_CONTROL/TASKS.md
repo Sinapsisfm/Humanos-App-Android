@@ -16,7 +16,7 @@
 
 ### TASK-001: Crear estructura docs completa con contenido real
 
-- **Estado:** `[PENDING]`
+- **Estado:** `[DONE]` (Tanda 2, commit 277d44c)
 - **Prioridad:** Alta
 - **Descripcion:** Crear todos los archivos de documentacion en `docs/00_PROJECT_CONTROL/` con contenido real, no placeholders. Incluye CURRENT_STATE, CHANGELOG, TASKS, DECISIONS_LOG, OPEN_QUESTIONS, RISKS, TRACEABILITY_MATRIX.
 - **Criterio de completitud:** Los 7 archivos existen con contenido sustantivo y referencias cruzadas consistentes.
@@ -27,7 +27,7 @@
 
 ### TASK-002: Crear ADRs 0001-0004
 
-- **Estado:** `[PENDING]`
+- **Estado:** `[DONE]` (Tanda 2, commit 277d44c)
 - **Prioridad:** Alta
 - **Descripcion:** Crear Architecture Decision Records fundacionales:
   - ADR-0001: Proyecto independiente con integracion via gateways
@@ -179,14 +179,78 @@
 
 ---
 
+### TASK-011: QA documental — verificacion consistencia cruzada
+
+- **Estado:** `[DONE]` (Tanda 3/3B, commit 2a28a10)
+- **Prioridad:** Alta
+- **Descripcion:** Verificar consistencia cruzada entre los 38 docs creados por agentes paralelos. Checks: MODULE_MAP vs TRACEABILITY_MATRIX, DECISIONS_LOG vs ADRs, TASKS vs CURRENT_STATE, RISKS vs SECURITY_PRIVACY, Integration docs consistency, compileSdk consistency, applicationId consistency, Firebase project ID consistency.
+- **Criterio de completitud:** DOCS_CONSISTENCY_REPORT.md creado con resultados.
+- **Refs:** DEC-004
+
+---
+
+### TASK-012: Agregar .gitattributes
+
+- **Estado:** `[DONE]` (Tanda 3, commit 2a28a10)
+- **Prioridad:** Media
+- **Descripcion:** Agregar .gitattributes para normalizar line endings (LF) en archivos de texto y marcar binarios.
+- **Refs:** DEC-002
+
+---
+
+### TASK-013: Incorporar core-observability a Phase 1
+
+- **Estado:** `[DONE]` (Tanda 3B)
+- **Prioridad:** Alta
+- **Descripcion:** Actualizar Phase 1 de 14 a 15 modulos incluyendo core-observability. Actualizar DEC-006, MODULE_MAP, TRACEABILITY_MATRIX.
+- **Refs:** DEC-011, DEC-009
+
+---
+
+### TASK-014: Crear DOCS_CONSISTENCY_REPORT.md
+
+- **Estado:** `[DONE]` (Tanda 3B)
+- **Prioridad:** Alta
+- **Descripcion:** Crear informe de QA documental con resultados de verificacion cruzada.
+- **Refs:** TASK-011
+
+---
+
+### TASK-015: Agregar Q-005 titularidad/licencia
+
+- **Estado:** `[DONE]` (Tanda 3B)
+- **Prioridad:** Media
+- **Descripcion:** Registrar pregunta sobre titularidad del codigo y licencia (MIT vs propietaria).
+- **Refs:** RISK-008
+
+---
+
+### TASK-016: Agregar RISK-008 titularidad IP
+
+- **Estado:** `[DONE]` (Tanda 3B)
+- **Prioridad:** Media
+- **Descripcion:** Registrar riesgo de licencia MIT publicada sin claridad sobre propiedad intelectual.
+- **Refs:** Q-005
+
+---
+
+### TASK-017: Actualizar CURRENT_STATE.md y CHANGELOG tras Tanda 3B
+
+- **Estado:** `[DONE]` (Tanda 3B)
+- **Prioridad:** Alta
+- **Descripcion:** Actualizar estado actual del proyecto y changelog con resultados de QA y correcciones.
+- **Refs:** DEC-004
+
+---
+
 ## Resumen de estado
 
 | ID | Descripcion | Estado | Prioridad |
 |----|-------------|--------|-----------|
-| TASK-001 | Crear estructura docs completa | `[PENDING]` | Alta |
-| TASK-002 | Crear ADRs 0001-0004 | `[PENDING]` | Alta |
+| TASK-001 | Crear estructura docs completa | `[DONE]` | Alta |
+| TASK-002 | Crear ADRs 0001-0004 | `[DONE]` | Alta |
 | TASK-003 | Crear proyecto Gradle con build-logic | `[PENDING]` | Alta |
-| TASK-004 | Crear los 14 modulos Phase 1 | `[PENDING]` | Alta |
+| TASK-004 | Crear los 15 modulos Phase 1 | `[PENDING]` | Alta |
 | TASK-005 | Crear modelos Kotlin en core-model | `[PENDING]` | Alta |
 | TASK-006 | Crear interfaces (repos + gateways) | `[PENDING]` | Media |
 | TASK-007 | Crear Room database + DAOs | `[PENDING]` | Media |

@@ -130,6 +130,23 @@
 
 ---
 
+## RISK-008: Licencia MIT publicada sin claridad sobre propiedad intelectual
+
+- **Fecha identificado:** 2026-06-07
+- **Severidad:** Medio
+- **Probabilidad:** Media
+- **Impacto:** Medio (potencial exposicion de IP si se hace open-source sin intencion)
+- **Descripcion:** El repo se inicializo con licencia MIT. Si el proyecto contiene logica de negocio propietaria de Sinapsis SpA (algoritmos de Context Engine, logica de agent, IP de QueBot adaptada), la licencia MIT permitiria uso irrestricto por terceros.
+- **Mitigacion:**
+  1. Felipe debe confirmar si el proyecto sera open-source (MIT) o propietario (Q-005)
+  2. Si propietario, cambiar LICENSE a copyright notice sin permiso de uso
+  3. Si open-source, asegurar que no se incluya IP propietaria de HumanOS/QueBot
+  4. Phase 1 skeleton no contiene logica propietaria, pero esto cambia en Phase 2+
+- **Owner:** Felipe
+- **Refs:** Q-005
+
+---
+
 ## Matriz de riesgos
 
 | ID | Riesgo | Probabilidad | Impacto | Severidad | Phase |
@@ -139,5 +156,6 @@
 | RISK-002 | Keystore / signing key mgmt | Media | Alto | Medio | 1 |
 | RISK-003 | Permisos camara/mic rechazados | Media | Medio | Medio | 1 |
 | RISK-006 | Firebase quota limits | Media | Medio | Medio | 1 |
+| RISK-008 | Licencia MIT sin claridad IP | Media | Medio | Medio | 1 |
 | RISK-004 | ONNX Runtime low-end devices | Baja | Medio | Bajo | 3 |
 | RISK-005 | Health Connect breaking changes | Baja | Bajo | Bajo | 3 |
