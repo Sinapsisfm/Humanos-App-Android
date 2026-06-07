@@ -8,6 +8,7 @@ import eco.humanos.android.core.model.task.TaskItem
 import eco.humanos.android.core.model.task.TaskPriority
 import eco.humanos.android.core.model.task.TaskStatus
 import kotlinx.coroutines.delay
+import javax.inject.Inject
 
 /**
  * In-memory fake of [HumanosGateway] for development, previews, and tests.
@@ -15,7 +16,7 @@ import kotlinx.coroutines.delay
  * Returns realistic Chilean/Spanish sample data with simulated network
  * latency. No actual HTTP calls are made.
  */
-class FakeHumanosGateway : HumanosGateway {
+class FakeHumanosGateway @Inject constructor() : HumanosGateway {
 
     private val now = System.currentTimeMillis()
 

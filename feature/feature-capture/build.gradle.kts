@@ -7,9 +7,7 @@ android {
 }
 
 dependencies {
-    implementation(libs.androidx.compose.material.icons.extended)
+    implementation(project(":core:core-observability"))
 
-    implementation(libs.androidx.lifecycle.runtime.compose)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
-    implementation(libs.hilt.navigation.compose)
+    implementation(libs.androidx.compose.material.icons.extended)
 }

@@ -3,6 +3,7 @@ package eco.humanos.android.integrations.quebot
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import javax.inject.Inject
 
 /**
  * In-memory fake of [QuebotGateway] for development, previews, and tests.
@@ -10,7 +11,7 @@ import kotlinx.coroutines.flow.flow
  * Emits SSE events with realistic delays to simulate the streaming
  * experience of the real QueBot pipeline. No actual HTTP calls are made.
  */
-class FakeQuebotGateway : QuebotGateway {
+class FakeQuebotGateway @Inject constructor() : QuebotGateway {
 
     override fun sendMessage(message: String, caseId: String?): Flow<SseEvent> = flow {
         // Simulate initial processing delay

@@ -14,6 +14,7 @@ import androidx.compose.material.icons.outlined.AttachFile
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -21,18 +22,22 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
  * Capture feature screen -- quick-entry form for notes, ideas, and
  * pending items with shortcuts for photo, voice, and file attachment.
  */
 @Composable
-fun CaptureScreen(modifier: Modifier = Modifier) {
+fun CaptureScreen(
+    viewModel: CaptureViewModel = hiltViewModel(),
+    modifier: Modifier = Modifier,
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -44,10 +49,9 @@ fun CaptureScreen(modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.headlineMedium,
         )
 
-        var textInput by remember { mutableStateOf("") }
         OutlinedTextField(
-            value = textInput,
-            onValueChange = { textInput = it },
+            value = uiState.textInput,
+            onValueChange = viewModel::updateText,
             label = { Text("Escribe una nota, idea o pendiente...") },
             modifier = Modifier
                 .fillMaxWidth()
@@ -73,11 +77,28 @@ fun CaptureScreen(modifier: Modifier = Modifier) {
         }
 
         Button(
-            onClick = { /* TODO: save capture */ },
+            onClick = viewModel::saveCapture,
             modifier = Modifier.fillMaxWidth(),
-            enabled = textInput.isNotBlank(),
+            enabled = uiState.textInput.isNotBlank() && !uiState.isSaving,
         ) {
+            if (uiState.isSaving) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .height(18.dp)
+                        .width(18.dp),
+                    strokeWidth = 2.dp,
+                )
+                Spacer(Modifier.width(8.dp))
+            }
             Text("Guardar captura")
+        }
+
+        if (uiState.savedMessage != null) {
+            Text(
+                text = uiState.savedMessage ?: "",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
         }
     }
 }

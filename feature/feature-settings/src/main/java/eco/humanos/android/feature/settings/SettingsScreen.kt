@@ -10,21 +10,46 @@ import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
  * Settings feature screen -- account, privacy, integrations,
  * permissions, and app version info.
  */
 @Composable
-fun SettingsScreen(modifier: Modifier = Modifier) {
+fun SettingsScreen(
+    viewModel: SettingsViewModel = hiltViewModel(),
+    modifier: Modifier = Modifier,
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    val humanosLabel = if (uiState.isCheckingConnections) {
+        "verificando..."
+    } else if (uiState.humanosConnected) {
+        "conectado"
+    } else {
+        "desconectado"
+    }
+
+    val quebotLabel = if (uiState.isCheckingConnections) {
+        "verificando..."
+    } else if (uiState.quebotConnected) {
+        "conectado"
+    } else {
+        "desconectado"
+    }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -59,10 +84,14 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
             ListItem(
                 headlineContent = { Text("Integraciones") },
                 supportingContent = {
-                    Text("HumanOS: desconectado | QueBot: desconectado")
+                    Text("HumanOS: $humanosLabel | QueBot: $quebotLabel")
                 },
                 leadingContent = {
-                    Icon(Icons.Outlined.Cloud, contentDescription = null)
+                    if (uiState.isCheckingConnections) {
+                        CircularProgressIndicator()
+                    } else {
+                        Icon(Icons.Outlined.Cloud, contentDescription = null)
+                    }
                 },
             )
         }

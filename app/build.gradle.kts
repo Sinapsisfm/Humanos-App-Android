@@ -28,6 +28,10 @@ dependencies {
     implementation(project(":core:core-model"))
     implementation(project(":core:core-observability"))
 
+    // Integration modules (Hilt modules must be visible at app level)
+    implementation(project(":integrations:integration-humanos"))
+    implementation(project(":integrations:integration-quebot"))
+
     // Data modules
     implementation(project(":data:data-auth"))
 
