@@ -8,6 +8,8 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:core-model"))
+
     implementation(libs.androidx.security.crypto)
     implementation(libs.kotlinx.coroutines.android)
 }

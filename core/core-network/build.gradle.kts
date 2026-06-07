@@ -10,6 +10,7 @@ android {
 
 dependencies {
     implementation(project(":core:core-model"))
+    implementation(project(":core:core-security"))
 
     implementation(libs.retrofit)
     implementation(libs.retrofit.kotlinx.serialization)

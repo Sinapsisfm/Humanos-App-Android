@@ -8,4 +8,5 @@ android {
 
 dependencies {
     implementation(project(":integrations:integration-humanos"))
+    implementation(project(":data:data-auth"))
 }
