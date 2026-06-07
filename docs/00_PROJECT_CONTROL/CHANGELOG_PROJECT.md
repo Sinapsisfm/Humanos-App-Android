@@ -82,6 +82,34 @@
 - 20 archivos, 807 lineas
 - Refs: TASK-006, TASK-008, DEC-003
 
+### Tanda 8: CI/CD + TraceEvent fix + editorconfig (commit fff39ec)
+
+- CI workflow: .github/workflows/ci.yml (lint + tests + debug APK)
+- Beta deploy template: .github/workflows/deploy-beta.yml (Firebase App Distribution, commented)
+- .editorconfig para formateo consistente
+- DEC-012: TraceEvent duplicado resuelto (canonico en core-model)
+- Refs: DEC-005, DEC-012
+
+### Tanda 9: Hilt DI + ViewModels + UI wiring (commit ed4e6f6)
+
+- Hilt modules: HumanosModule, QuebotModule, ObservabilityModule
+- InMemoryTraceRepository (implementacion in-memory de TraceRepository)
+- ViewModels: DashboardViewModel, CaptureViewModel, SettingsViewModel
+- UI wired: pantallas usan hiltViewModel() + collectAsStateWithLifecycle()
+- Dashboard muestra tareas reales del FakeHumanosGateway
+- Capture guarda con TraceEvent logging
+- Settings muestra estado de conexion live
+- AndroidFeatureConventionPlugin actualizado con lifecycle + hilt-navigation-compose
+- Refs: TASK-008, DEC-002, DEC-003
+
+### Tanda 10: Docs sync + GitHub repo + verificacion estatica
+
+- CURRENT_STATE.md actualizado con commits 8-10
+- CHANGELOG actualizado
+- TASKS.md sincronizado
+- Verificacion estatica de imports y consistencia de codigo
+- Refs: DEC-004
+
 ### Tanda 7: Sincronizacion de documentacion
 
 - CURRENT_STATE.md reescrito completamente con estado real

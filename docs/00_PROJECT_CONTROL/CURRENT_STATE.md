@@ -21,7 +21,11 @@ El repositorio tiene un proyecto Android Gradle multi-modulo con 15 modulos Phas
 | 5 | `22f00be` | 5 | Modelos Kotlin en core-model (27 modelos, 7 packages) | 29 | +676 |
 | 6 | `116adfc` | 6 | Interfaces, gateways, fakes, Navigation Compose | 20 | +807 |
 
-**Total acumulado:** ~167 archivos, ~10,071 lineas
+| 7 | `479c76e` | 7 | Docs sync masiva | 4 | +156 |
+| 8 | `fff39ec` | 8 | CI/CD workflows, TraceEvent fix, editorconfig | 5 | +209 |
+| 9 | `ed4e6f6` | 9 | Hilt DI modules, ViewModels, UI wiring | 17 | +379 |
+
+**Total acumulado:** ~190 archivos, ~11,000+ lineas
 
 ## Decisiones clave vigentes
 
