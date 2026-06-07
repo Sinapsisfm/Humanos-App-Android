@@ -131,6 +131,16 @@
 
 ---
 
+## DEC-012: TraceEvent canonico en core-model
+
+- **Fecha:** 2026-06-07
+- **Decision:** La clase `TraceEvent` canonica vive en `core-model/common/TraceEvent.kt`. Se elimino la definicion duplicada que existia en `core-observability` (stub de Tanda 4). `core-observability` importa desde `core-model`. `TraceCategory` enum permanece en `core-observability` porque es infraestructura de logging, no modelo de dominio.
+- **Contexto:** GPT identifico en revision de Tandas 5-6 que existian dos definiciones de `TraceEvent` con campos diferentes. La de `core-model` tiene `@Serializable`, entityType, entityId, action, source, userId. La de `core-observability` era un stub simplificado con name, category, metadata.
+- **Consecuencias:** Una sola definicion canonica. `core-observability` depende de `core-model` (ya configurado en build.gradle.kts).
+- **Refs:** DEC-009
+
+---
+
 ## Indice rapido
 
 | ID | Titulo | Fecha |
@@ -146,3 +156,4 @@
 | DEC-009 | Merge en core-observability | 2026-06-06 |
 | DEC-010 | compileSdk 36 preferente | 2026-06-06 |
 | DEC-011 | core-observability en Phase 1 | 2026-06-07 |
+| DEC-012 | TraceEvent canonico en core-model | 2026-06-07 |

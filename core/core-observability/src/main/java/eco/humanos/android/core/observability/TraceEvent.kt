@@ -1,16 +1,20 @@
 package eco.humanos.android.core.observability
 
 /**
- * Lightweight trace event for audit trail and observability.
- * Full implementation in Tanda 5.
+ * Re-export of the canonical TraceEvent from core-model.
+ *
+ * The canonical TraceEvent data class lives in:
+ *   eco.humanos.android.core.model.common.TraceEvent
+ *
+ * This file previously contained a duplicate definition (Tanda 4 stub).
+ * Removed in Tanda 8 to resolve duplication identified by GPT review.
+ * See DEC-012.
+ *
+ * core-observability depends on core-model and uses TraceEvent directly.
+ * Import from: eco.humanos.android.core.model.common.TraceEvent
  */
-data class TraceEvent(
-    val name: String,
-    val category: TraceCategory,
-    val timestampMs: Long = System.currentTimeMillis(),
-    val metadata: Map<String, String> = emptyMap(),
-)
 
+// TraceCategory remains here as it's observability infrastructure, not domain model.
 enum class TraceCategory {
     AUTH,
     NETWORK,
@@ -18,4 +22,10 @@ enum class TraceCategory {
     UI,
     SYNC,
     SECURITY,
+    CAPTURE,
+    TASK,
+    CONTEXT,
+    HEALTH,
+    TERRAIN,
+    INTEGRATION,
 }
