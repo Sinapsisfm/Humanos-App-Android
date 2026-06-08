@@ -7,6 +7,6 @@ android {
 }
 
 dependencies {
-    implementation(project(":integrations:integration-humanos"))
+    implementation(project(":data:data-tasks"))
     implementation(project(":data:data-auth"))
 }

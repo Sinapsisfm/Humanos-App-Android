@@ -151,6 +151,17 @@
 
 ---
 
+## DEC-014: Adelantar data-tasks a Phase 1 + patron offline-first
+
+- **Fecha:** 2026-06-07
+- **Decision:** El modulo `data-tasks` (originalmente Phase 2, MOD-024) se adelanta a Phase 1 como MOD-017. Implementa `TaskRepository` con patron offline-first: `HumanosGateway` (remoto) -> Room (source of truth) -> UI (observa Flow).
+- **Contexto:** Tras validar el patron repository con `data-capture` (DEC-013) + tests (Tanda 15), GPT confirmo replicarlo para tasks. Esta vez se implementa el NetworkBoundResource completo documentado en DATA_FLOW.md: `syncFromRemote()` trae tareas del gateway fake y las cachea en Room; el Dashboard observa Room y reacciona. Demuestra el flujo offline-first real, no solo persistencia local.
+- **Consecuencias:** Phase 1 pasa de 16 a 17 modulos. `DashboardViewModel` ahora usa `TaskRepository` (Room) en vez de `HumanosGateway` directo — las tareas persisten y sobreviven cierre de app. Patron validado para replicar en sync de context, health, etc. (Phase 2+).
+- **Nota de trazabilidad:** DEC-013 cubre la promocion de `data-capture` a Phase 1. DEC-014 cubre `data-tasks`. La separacion Room entity/domain esta en ADR-0005 (no es una DEC). Aclaracion por observacion de GPT en revision de Tanda 14.
+- **Refs:** DEC-003, DEC-013, ADR-0005, REQ-TASK-001
+
+---
+
 ## Indice rapido
 
 | ID | Titulo | Fecha |
@@ -168,3 +179,4 @@
 | DEC-011 | core-observability en Phase 1 | 2026-06-07 |
 | DEC-012 | TraceEvent canonico en core-model | 2026-06-07 |
 | DEC-013 | Adelantar data-capture a Phase 1 | 2026-06-07 |
+| DEC-014 | Adelantar data-tasks a Phase 1 + offline-first | 2026-06-07 |

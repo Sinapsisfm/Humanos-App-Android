@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import eco.humanos.android.core.model.task.TaskItem
-import eco.humanos.android.integrations.humanos.HumanosGateway
+import eco.humanos.android.data.tasks.repository.TaskRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,9 +12,15 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/**
+ * Drives the dashboard with an offline-first flow: the UI observes tasks
+ * from Room via [TaskRepository.observeTasks], while [TaskRepository.syncFromRemote]
+ * refreshes Room from the HumanOS gateway. Observers react automatically
+ * once Room is updated.
+ */
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
-    private val humanosGateway: HumanosGateway,
+    private val taskRepository: TaskRepository,
 ) : ViewModel() {
 
     data class DashboardUiState(
@@ -28,21 +34,28 @@ class DashboardViewModel @Inject constructor(
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
     init {
-        loadDashboard()
+        observeTasks()
+        refresh()
     }
 
-    private fun loadDashboard() {
+    private fun observeTasks() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            humanosGateway.fetchTasks()
-                .onSuccess { tasks ->
-                    _uiState.update { it.copy(tasks = tasks, isLoading = false) }
-                }
-                .onFailure { error ->
-                    _uiState.update { it.copy(error = error.message, isLoading = false) }
-                }
+            taskRepository.observeTasks().collect { tasks ->
+                _uiState.update { it.copy(tasks = tasks) }
+            }
         }
     }
 
-    fun refresh() = loadDashboard()
+    fun refresh() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            taskRepository.syncFromRemote()
+                .onSuccess {
+                    _uiState.update { it.copy(isLoading = false, error = null) }
+                }
+                .onFailure { error ->
+                    _uiState.update { it.copy(isLoading = false, error = error.message) }
+                }
+        }
+    }
 }

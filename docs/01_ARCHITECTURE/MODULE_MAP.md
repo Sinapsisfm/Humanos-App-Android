@@ -3,7 +3,7 @@
 > humanOS Native Android -- Complete Module Inventory
 > Last updated: 2026-06-06
 
-## Phase 1 Modules (16 modules -- current, updated 2026-06-07 per DEC-011, DEC-013)
+## Phase 1 Modules (17 modules -- current, updated 2026-06-07 per DEC-011, DEC-013, DEC-014)
 
 | MOD-ID | Name | Layer | Phase | Dependencies | Description |
 |---|---|---|---|---|---|
@@ -23,6 +23,7 @@
 | MOD-014 | `:testing-common` | testing | 1 | core-model | Shared test utilities. Fake dispatchers (`TestDispatcherRule`), model fixtures (`TestFixtures.kt`), Room in-memory DB helper, fake `NetworkMonitor`. |
 | MOD-015 | `:core-observability` | core | 1 | core-model, core-database | TraceEvent logging infrastructure, structured logging, audit trail persistence, retention policies. Models live in core-model; this module provides write/query implementation. (Added per DEC-011) |
 | MOD-016 | `:data-capture` | data | 1 | core-model, core-database, core-observability | CaptureRepository implementation using Room CaptureDao. Persists text captures, observes via Flow, logs TraceEvents. Advanced from Phase 2 per DEC-013. |
+| MOD-017 | `:data-tasks` | data | 1 | core-model, core-database, core-observability, integration-humanos | TaskRepository with offline-first sync: HumanosGateway -> Room -> UI. syncFromRemote caches remote tasks, observeTasks emits from Room. Advanced from Phase 2 per DEC-014. |
 
 ## Phase 2 Modules (planned -- ~12 modules)
 
