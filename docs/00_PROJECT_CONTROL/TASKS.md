@@ -271,3 +271,11 @@
 | TASK-022 | Rewrite nativo selectivo donde la UX nativa gane (post-paridad) | `[PENDING]` | Baja |
 
 - **Refs:** ADR-0006, DEC-016, DEC-017, RISK-010
+
+## Iteración WebView (2026-06-08)
+
+| ID | Descripcion | Estado | Prioridad |
+|----|-------------|--------|-----------|
+| TASK-023 | Diagnosticar+arreglar contenido WebView no renderiza (shell ok, main blank) | `[IN_PROGRESS]` | Alta |
+| TASK-024 | Ocultar bottom bar app en rutas web (menu doble) | `[DONE]` | Media |
+| TASK-025 | Hardening WebView: whitelist hosts humanos.eco, descargas, offline | `[PENDING]` | Media |

@@ -214,3 +214,15 @@
 - **feature-web** (MOD-018): pestaña "Modulos" → hub de modulos web (home, empresa,
   estudiante, salud, care, legal) → WebView embebido autenticado. TASK-018..020 DONE.
 - Releases firmados a6041dcf (instalan sobre la version previa sin conflicto).
+
+## 2026-06-08 — v0.4.1 (iteración WebView)
+
+- Menu doble resuelto: la barra inferior de la app se OCULTA en rutas `web/{moduleKey}`
+  (el módulo web es full-screen con su propia navegación).
+- WebViewScreen v2: settings completos (databaseEnabled, multiple-windows in-place,
+  wide viewport, mixed-content compat), barra superior (atrás/recargar/título),
+  progreso, y **captura de errores JS en pantalla** (chip ⚠) + setWebContentsDebuggingEnabled
+  (chrome://inspect) para diagnosticar por qué el contenido no renderiza.
+- Hallazgo Felipe: el shell autenticado carga (FABs QueBot, tour, nav) pero el
+  CONTENIDO `<main>` no → hipótesis: hidratación React falla en el WebView.
+  Diagnóstico via el chip ⚠ en la próxima prueba. TASK-023.
