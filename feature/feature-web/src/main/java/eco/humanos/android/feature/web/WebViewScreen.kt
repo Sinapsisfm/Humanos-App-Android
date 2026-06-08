@@ -23,6 +23,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
@@ -35,7 +36,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -56,10 +56,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
  * Embedded HumanOS web module in a [WebView], authenticated via the session
- * bridge (ADR-0006). Full-screen (the app's bottom bar is hidden on this route);
- * a slim top bar gives back / reload. Page JS errors are captured and shown
- * on-screen (⚠ chip) so issues are diagnosable without a desktop debugger;
- * `WebView.setWebContentsDebuggingEnabled` also enables chrome://inspect.
+ * bridge (ADR-0006). Full-screen with a slim top bar (back / debug / share /
+ * reload). A built-in diagnostic — a DOM probe + captured console warnings/errors
+ * — is always shareable (🐞), so a blank-content issue can be diagnosed without a
+ * desktop debugger. `setWebContentsDebuggingEnabled` also enables chrome://inspect.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("SetJavaScriptEnabled")
@@ -77,12 +77,20 @@ fun WebViewScreen(
     var webView by remember { mutableStateOf<WebView?>(null) }
     var canGoBack by remember { mutableStateOf(false) }
     var progress by remember { mutableIntStateOf(0) }
-    val jsErrors = remember { mutableStateListOf<String>() }
-    var showErrors by remember { mutableStateOf(false) }
+    val consoleLog = remember { mutableStateListOf<String>() }
+    var domProbe by remember { mutableStateOf("(sondeo pendiente)") }
+    var showPanel by remember { mutableStateOf(false) }
 
     BackHandler(enabled = true) {
         val wv = webView
         if (canGoBack && wv != null) wv.goBack() else onBack()
+    }
+
+    fun debugReport(): String = buildString {
+        append("humanOS WebView — ${state.title}\n")
+        append((state.url ?: "").substringBefore("#token="))
+        append("\n\n— DOM probe —\n$domProbe\n\n— Consola (${consoleLog.size}) —\n")
+        append(consoleLog.takeLast(25).joinToString("\n"))
     }
 
     Scaffold(
@@ -96,31 +104,24 @@ fun WebViewScreen(
                     }
                 },
                 actions = {
-                    if (jsErrors.isNotEmpty()) {
-                        TextButton(onClick = { showErrors = !showErrors }) {
-                            Text("⚠ ${jsErrors.size}")
+                    // Always available — even when the page renders blank with no errors.
+                    IconButton(onClick = { showPanel = !showPanel }) {
+                        Icon(Icons.Filled.BugReport, contentDescription = "Diagnóstico")
+                    }
+                    IconButton(onClick = {
+                        val send = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_SUBJECT, "humanOS — diagnóstico WebView")
+                            putExtra(Intent.EXTRA_TEXT, debugReport())
                         }
-                        IconButton(onClick = {
-                            val report = buildString {
-                                append("humanOS WebView — ${state.title}\n")
-                                append(state.url?.substringBefore("#token=") ?: "")
-                                append("\n\nErrores (${jsErrors.size}):\n")
-                                append(jsErrors.joinToString("\n"))
-                            }
-                            val send = Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_SUBJECT, "humanOS — errores WebView")
-                                putExtra(Intent.EXTRA_TEXT, report)
-                            }
-                            runCatching {
-                                context.startActivity(
-                                    Intent.createChooser(send, "Compartir errores")
-                                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                                )
-                            }
-                        }) {
-                            Icon(Icons.Filled.Share, contentDescription = "Compartir errores")
+                        runCatching {
+                            context.startActivity(
+                                Intent.createChooser(send, "Compartir diagnóstico")
+                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                            )
                         }
+                    }) {
+                        Icon(Icons.Filled.Share, contentDescription = "Compartir diagnóstico")
                     }
                     IconButton(onClick = { webView?.reload() }) {
                         Icon(Icons.Filled.Refresh, contentDescription = "Recargar")
@@ -170,22 +171,22 @@ fun WebViewScreen(
                                     domStorageEnabled = true
                                     databaseEnabled = true
                                     javaScriptCanOpenWindowsAutomatically = true
-                                    setSupportMultipleWindows(false) // window.open → in-place
+                                    setSupportMultipleWindows(false)
                                     useWideViewPort = true
                                     loadWithOverviewMode = true
                                     mediaPlaybackRequiresUserGesture = false
                                     mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
                                     cacheMode = WebSettings.LOAD_DEFAULT
-                                    // Mark the WebView so the server relaxes its
-                                    // strict CSP here (Next inline scripts) — see
-                                    // middleware buildCsp(relaxInline) / ADR-0006.
                                     userAgentString = "$userAgentString humanOSApp"
                                 }
                                 webChromeClient = object : WebChromeClient() {
                                     override fun onConsoleMessage(message: ConsoleMessage): Boolean {
-                                        if (message.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
-                                            jsErrors.add(
-                                                "${message.message()} (${message.sourceId()}:${message.lineNumber()})",
+                                        val lvl = message.messageLevel()
+                                        if (lvl == ConsoleMessage.MessageLevel.ERROR ||
+                                            lvl == ConsoleMessage.MessageLevel.WARNING
+                                        ) {
+                                            consoleLog.add(
+                                                "[$lvl] ${message.message()} (${message.sourceId()}:${message.lineNumber()})",
                                             )
                                         }
                                         return true
@@ -196,10 +197,6 @@ fun WebViewScreen(
                                     }
                                 }
                                 webViewClient = object : WebViewClient() {
-                                    // Keep the WebView first-party (humanos.eco /
-                                    // empresa.eco). External links open in the
-                                    // system browser — bounds the relaxed CSP to
-                                    // our own site (RISK-011 mitigation).
                                     override fun shouldOverrideUrlLoading(
                                         view: WebView?,
                                         request: WebResourceRequest?,
@@ -218,11 +215,18 @@ fun WebViewScreen(
                                     }
 
                                     override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                                        jsErrors.clear()
+                                        consoleLog.clear()
                                     }
 
                                     override fun onPageFinished(view: WebView?, url: String?) {
                                         canGoBack = view?.canGoBack() == true
+                                        // Probe the DOM ~1.6s after load (post-hydration)
+                                        // to tell layout-collapse from empty-content.
+                                        view?.postDelayed({
+                                            view.evaluateJavascript(DOM_PROBE_JS) { result ->
+                                                domProbe = result.trim().trim('"').replace("\\\"", "\"")
+                                            }
+                                        }, 1600)
                                     }
 
                                     override fun onReceivedError(
@@ -231,7 +235,7 @@ fun WebViewScreen(
                                         error: WebResourceError?,
                                     ) {
                                         if (request?.isForMainFrame == true) {
-                                            jsErrors.add("HTTP ${error?.errorCode}: ${error?.description} (${request.url})")
+                                            consoleLog.add("[NET] ${error?.errorCode}: ${error?.description} (${request.url})")
                                         }
                                     }
                                 }
@@ -250,27 +254,35 @@ fun WebViewScreen(
                         )
                     }
 
-                    if (showErrors && jsErrors.isNotEmpty()) {
+                    if (showPanel) {
                         Surface(
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
                                 .fillMaxWidth(),
-                            color = MaterialTheme.colorScheme.errorContainer,
+                            color = MaterialTheme.colorScheme.surfaceVariant,
                         ) {
                             Column(
                                 modifier = Modifier
                                     .padding(12.dp)
-                                    .heightIn(max = 220.dp)
+                                    .heightIn(max = 280.dp)
                                     .verticalScroll(rememberScrollState()),
-                                verticalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp),
                             ) {
                                 Text(
-                                    "Errores de la página (${jsErrors.size}):",
+                                    "Diagnóstico (toca 📤 para compartir)",
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold,
                                 )
-                                jsErrors.takeLast(10).forEach {
-                                    Text(it, style = MaterialTheme.typography.bodySmall)
+                                Text("DOM: $domProbe", style = MaterialTheme.typography.bodySmall)
+                                if (consoleLog.isNotEmpty()) {
+                                    Text(
+                                        "Consola (${consoleLog.size}):",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                    )
+                                    consoleLog.takeLast(12).forEach {
+                                        Text(it, style = MaterialTheme.typography.bodySmall)
+                                    }
                                 }
                             }
                         }
@@ -280,3 +292,28 @@ fun WebViewScreen(
         }
     }
 }
+
+/**
+ * Reports whether the page content is present (and how tall) vs the visible
+ * shell — distinguishes a layout collapse (mainHeight ~0) from empty data
+ * (mainChildren 0) from a redirect (unexpected url).
+ */
+private const val DOM_PROBE_JS = """
+(function(){
+  try {
+    var m = document.querySelector('main');
+    var t = (document.body && document.body.innerText || '').replace(/\s+/g,' ').trim();
+    return JSON.stringify({
+      url: location.pathname,
+      title: document.title,
+      mainExists: !!m,
+      mainChildren: m ? m.childElementCount : -1,
+      mainH: m ? m.scrollHeight : -1,
+      bodyH: document.body ? document.body.scrollHeight : -1,
+      winH: window.innerHeight,
+      textLen: t.length,
+      sample: t.slice(0,140)
+    });
+  } catch(e){ return 'probe-error: ' + e.message; }
+})();
+"""

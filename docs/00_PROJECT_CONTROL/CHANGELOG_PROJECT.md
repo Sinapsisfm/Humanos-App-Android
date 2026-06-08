@@ -238,3 +238,15 @@
 - App: WebView marca UA `humanOSApp` + host whitelist (solo humanos.eco/empresa.eco;
   externos al navegador) + botón "Compartir errores" (ACTION_SEND) para mandar el
   log de errores directo desde la app (pedido de Felipe: debug sin PC).
+
+## 2026-06-08 — v0.4.3 (diagnóstico WebView conclusivo)
+
+- v0.4.2 quitó el error CSP (el chip ⚠ ya no aparece) → el contenido en blanco
+  ahora es por otra causa SIN error de consola (layout altura 0 o datos vacíos).
+- v0.4.3: botón Diagnóstico (🐞) SIEMPRE visible + Compartir (📤) + sondeo del DOM
+  post-hidratación (main existe?, mainChildren, mainH, bodyH, textLen, url) +
+  captura de consola ERROR+WARNING. Distingue layout-collapse vs datos-vacíos vs
+  redirect. TASK-023.
+- Emulador (pedido de Felipe): requiere cmdline-tools + system image (~1.5GB) +
+  AVD + workaround de login Google → esfuerzo dedicado (TASK-026). El sondeo DOM
+  resuelve este round sin emulador.

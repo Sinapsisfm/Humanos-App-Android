@@ -279,3 +279,6 @@
 | TASK-023 | Diagnosticar+arreglar contenido WebView no renderiza (shell ok, main blank) | `[IN_PROGRESS]` | Alta |
 | TASK-024 | Ocultar bottom bar app en rutas web (menu doble) | `[DONE]` | Media |
 | TASK-025 | Hardening WebView: whitelist hosts humanos.eco, descargas, offline | `[PENDING]` | Media |
+
+| TASK-026 | Emulador en PC para debug WebView directo (cmdline-tools+image+AVD+login) | `[PENDING]` | Media |
+| TASK-027 | Bridge AgentOS 2-vías: /api/mobile/feedback + UI "Reportar a Claude" | `[PENDING]` | Media |
