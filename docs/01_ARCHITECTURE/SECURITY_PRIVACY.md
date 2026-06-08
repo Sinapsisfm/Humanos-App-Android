@@ -54,6 +54,66 @@ val encryptedPrefs = EncryptedSharedPreferences.create(
 
 Tokens are **never** stored in plain SharedPreferences, DataStore, Room, or logs.
 
+## HumanOS Session Vault
+
+The HumanOS bridge session (the bridge JWT plus minimal session metadata) is held
+in a dedicated **Secure Vault**: `HumanOSSessionStore`, implemented by
+`EncryptedHumanOSSessionStore` in `core-security`. This is the durable,
+encrypted replacement for the earlier in-memory `AtomicReference` cache in
+`FirebaseAuthRepository`.
+
+| Property | Behavior |
+|---|---|
+| Backing store | Keystore-backed `EncryptedSharedPreferences` (`humanos_secure_prefs`), AES-256 master key (`AES256_GCM`), keys `AES256_SIV` / values `AES256_GCM`. |
+| Serialization | The session is encoded to JSON (`kotlinx.serialization`) and the string is stored encrypted under a single key. |
+| Never in Room | The bridge token is **never** persisted to Room, plain `SharedPreferences`, or DataStore — only to the encrypted vault. |
+| Never logged | The implementation logs only generic lifecycle breadcrumbs (`session saved`, `session cleared`, `expired session purged`). No token value, JWT, userId, or email is ever logged. |
+| Expiry-checked | `get()` returns `null` when no session exists **or** when the stored session has expired (`expiresAtEpochMs < now`); the expired record is purged on read, so callers can never use a stale token. |
+| Cleared on sign-out | `signOut()` calls `vault.clear()` before tearing down the Firebase session, so no bridge token survives sign-out. |
+| Reactive | `observeIsAuthenticated()` emits whether a non-expired session currently exists, updating on every save / clear / expiry purge. |
+
+### Session shape
+
+```kotlin
+@Serializable
+data class HumanOSSession(
+    val bridgeToken: String,        // sensitive — vault only, never logged
+    val userId: String,
+    val personId: String?,
+    val email: String?,
+    val displayName: String?,
+    val expiresAtEpochMs: Long,     // session is "absent" once this is < now
+)
+```
+
+### Lifecycle (flag-gated)
+
+Writing to the vault is gated by `IntegrationConfig.USE_REAL_HUMANOS_AUTH`:
+
+- **Flag off (default)** — the vault is **never written or read**; `getHumanosToken()`
+  returns `null` and behaviour is identical to the pre-bridge app.
+- **Flag on** — after Firebase sign-in, the Firebase ID token is exchanged for a
+  HumanOS bridge JWT, the resulting session is `save()`-d to the vault, and
+  `getHumanosToken()` reads it back (re-exchanging if absent). The exchange is
+  best-effort: a bridge outage degrades to the mock state and writes nothing.
+
+```
+Firebase sign-in (flag on)
+    |
+exchange Firebase ID token -> HumanOS bridge JWT
+    |
+HumanOSSessionStore.save(session)   → EncryptedSharedPreferences (Keystore)
+    |
+getHumanosToken() → vault.get() (expiry-checked) → Bearer for API calls
+    |
+signOut() → vault.clear() → no token survives
+```
+
+> The real `EncryptedSharedPreferences` implementation requires the Android
+> Keystore at runtime. Its **contract** (save/get, expiry, clear,
+> `observeIsAuthenticated`) is unit-tested via an in-memory fake
+> (`FakeHumanOSSessionStore`); the encrypted impl itself is exercised on-device.
+
 ## Privacy Levels
 
 ```kotlin

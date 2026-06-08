@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      The update checker fetches the GitHub Releases API over HTTPS. Declaring
+      the permission here lets it merge into the consuming app's manifest so the
+      feature works regardless of which app embeds this library.
+    -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+</manifest>

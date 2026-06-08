@@ -3,8 +3,11 @@ package eco.humanos.android.feature.settings
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -15,6 +18,10 @@ import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.SystemUpdate
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -31,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import eco.humanos.android.core.model.auth.AuthState
+import eco.humanos.android.core.update.UpdateInfo
 
 /**
  * Settings feature screen -- account, privacy, integrations,
@@ -71,6 +79,14 @@ fun SettingsScreen(
                 text = "Configuracion",
                 style = MaterialTheme.typography.headlineMedium,
             )
+        }
+        uiState.availableUpdate?.let { update ->
+            item {
+                UpdateBanner(
+                    update = update,
+                    onDownload = { context.openUrl(update.downloadUrl) },
+                )
+            }
         }
         item {
             AccountListItem(
@@ -116,10 +132,16 @@ fun SettingsScreen(
         }
         item {
             HorizontalDivider()
+            val versionLabel = uiState.currentVersionName.ifBlank { "0.1.0" }
+            val updateStatus = if (uiState.availableUpdate == null) {
+                "App actualizada"
+            } else {
+                "Actualizacion disponible: v${uiState.availableUpdate!!.versionName}"
+            }
             ListItem(
                 headlineContent = { Text("humanOS Android") },
                 supportingContent = {
-                    Text("v0.1.0-dev | Phase 1 Skeleton\nGCP: humanos-app | compileSdk 36")
+                    Text("v$versionLabel | Phase 1 Skeleton\n$updateStatus")
                 },
                 leadingContent = {
                     Icon(Icons.Outlined.Info, contentDescription = null)
@@ -200,6 +222,65 @@ private fun AccountListItem(
             )
         }
     }
+}
+
+/**
+ * Highlighted card shown at the top of Settings when a newer release exists. The
+ * primary action opens the APK download URL in the browser; the user then taps
+ * the downloaded file to install (sideload).
+ */
+@Composable
+private fun UpdateBanner(
+    update: UpdateInfo,
+    onDownload: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            ListItem(
+                colors = androidx.compose.material3.ListItemDefaults.colors(
+                    containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                ),
+                headlineContent = {
+                    Text("Nueva version v${update.versionName} disponible")
+                },
+                supportingContent = update.releaseNotes?.let { notes ->
+                    {
+                        Text(
+                            text = notes,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 4,
+                        )
+                    }
+                },
+                leadingContent = {
+                    Icon(Icons.Outlined.SystemUpdate, contentDescription = null)
+                },
+            )
+            Button(onClick = onDownload) {
+                Text("Descargar actualizacion")
+            }
+        }
+    }
+}
+
+/**
+ * Opens [url] in the user's browser / download handler via an implicit
+ * ACTION_VIEW intent. FLAG_ACTIVITY_NEW_TASK is required because this may be
+ * launched from a non-Activity context.
+ */
+private fun Context.openUrl(url: String) {
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    startActivity(intent)
 }
 
 /**

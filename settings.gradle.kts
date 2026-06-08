@@ -41,6 +41,7 @@ include(":core:core-network")
 include(":core:core-security")
 include(":core:core-ui")
 include(":core:core-observability")
+include(":core:core-update")
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 include(":data:data-auth")

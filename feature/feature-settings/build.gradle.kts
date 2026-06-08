@@ -8,6 +8,7 @@ android {
 
 dependencies {
     implementation(project(":data:data-auth"))
+    implementation(project(":core:core-update"))
     implementation(project(":integrations:integration-humanos"))
     implementation(project(":integrations:integration-quebot"))
 
