@@ -40,6 +40,10 @@ class SettingsViewModel @Inject constructor(
         val currentVersionName: String = "",
         /** Non-null when a newer release is available on GitHub. */
         val availableUpdate: UpdateInfo? = null,
+        /** True while a (manual or initial) update check is in flight. */
+        val isCheckingUpdate: Boolean = false,
+        /** Transient result of a manual check, e.g. "Estás en la última versión". */
+        val updateCheckMessage: String? = null,
     )
 
     private val _uiState = MutableStateFlow(
@@ -81,12 +85,26 @@ class SettingsViewModel @Inject constructor(
      * checker (returns null), so this never surfaces an error to the UI — the
      * update banner simply stays hidden.
      */
-    private fun checkForUpdate() {
+    private fun checkForUpdate(manual: Boolean = false) {
         viewModelScope.launch {
+            _uiState.update { it.copy(isCheckingUpdate = true, updateCheckMessage = null) }
             val update = updateChecker.checkForUpdate(_uiState.value.currentVersionName)
-            _uiState.update { it.copy(availableUpdate = update) }
+            _uiState.update {
+                it.copy(
+                    isCheckingUpdate = false,
+                    availableUpdate = update,
+                    updateCheckMessage = if (manual && update == null) {
+                        "Estás en la última versión"
+                    } else {
+                        null
+                    },
+                )
+            }
         }
     }
+
+    /** Manual "Comprobar actualizaciones" action from Settings. */
+    fun recheckUpdate() = checkForUpdate(manual = true)
 
     /**
      * Runs the Google Sign-In flow. [activityContext] must be an Activity

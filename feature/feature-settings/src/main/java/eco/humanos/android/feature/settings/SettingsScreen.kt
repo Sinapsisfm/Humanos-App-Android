@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import eco.humanos.android.core.model.auth.AuthState
+import eco.humanos.android.core.update.ApkInstaller
 import eco.humanos.android.core.update.UpdateInfo
 
 /**
@@ -84,7 +85,13 @@ fun SettingsScreen(
             item {
                 UpdateBanner(
                     update = update,
-                    onDownload = { context.openUrl(update.downloadUrl) },
+                    onDownload = {
+                        ApkInstaller.downloadAndInstall(
+                            context,
+                            update.downloadUrl,
+                            update.versionName,
+                        )
+                    },
                 )
             }
         }
@@ -132,19 +139,38 @@ fun SettingsScreen(
         }
         item {
             HorizontalDivider()
-            val versionLabel = uiState.currentVersionName.ifBlank { "0.1.0" }
-            val updateStatus = if (uiState.availableUpdate == null) {
-                "App actualizada"
-            } else {
-                "Actualizacion disponible: v${uiState.availableUpdate!!.versionName}"
-            }
+            val versionLabel = uiState.currentVersionName.ifBlank { "0.3.0" }
             ListItem(
                 headlineContent = { Text("humanOS Android") },
                 supportingContent = {
-                    Text("v$versionLabel | Phase 1 Skeleton\n$updateStatus")
+                    Column {
+                        Text("v$versionLabel")
+                        val status = when {
+                            uiState.isCheckingUpdate -> "Buscando actualizaciones..."
+                            uiState.availableUpdate != null ->
+                                "Actualizacion disponible: v${uiState.availableUpdate!!.versionName}"
+                            uiState.updateCheckMessage != null -> uiState.updateCheckMessage!!
+                            else -> "App actualizada"
+                        }
+                        Text(
+                            text = status,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        TextButton(
+                            onClick = { viewModel.recheckUpdate() },
+                            enabled = !uiState.isCheckingUpdate,
+                        ) {
+                            Text("Comprobar actualizaciones")
+                        }
+                    }
                 },
                 leadingContent = {
-                    Icon(Icons.Outlined.Info, contentDescription = null)
+                    if (uiState.isCheckingUpdate) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    } else {
+                        Icon(Icons.Outlined.Info, contentDescription = null)
+                    }
                 },
             )
         }
