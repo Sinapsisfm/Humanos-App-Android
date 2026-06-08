@@ -2,10 +2,12 @@ package eco.humanos.android.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.AddCircle
+import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Settings
@@ -40,6 +42,12 @@ enum class TopLevelDestination(
         label = "Capturar",
         selectedIcon = Icons.Filled.AddCircle,
         unselectedIcon = Icons.Outlined.AddCircle,
+    ),
+    MODULES(
+        route = "modules",
+        label = "Módulos",
+        selectedIcon = Icons.Filled.Apps,
+        unselectedIcon = Icons.Outlined.Apps,
     ),
     SETTINGS(
         route = "settings",

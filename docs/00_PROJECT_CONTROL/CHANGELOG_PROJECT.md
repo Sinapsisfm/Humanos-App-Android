@@ -192,3 +192,25 @@
 - Archivos o modulos afectados
 - Refs: DEC-NNN, TASK-NNN, RISK-NNN (si aplica)
 ```
+
+---
+
+## 2026-06-08 — Datos reales end-to-end + plan hibrido (v0.3.0 → v0.4.0)
+
+### Bridge de datos real (v0.3.0–v0.3.2)
+- humanos-eco: rutas `/api/mobile/*` (bridge-JWT) + helper `mobile-bridge-auth` +
+  exencion en middleware (MED-04 bloqueaba `/api/mobile/*` con 404). Fix login
+  409 → re-auth con email verificado. Felipe confirmo: login OK + 102 tareas reales.
+- App: gateway repuntado a `/api/mobile/*` (envelopes, fechas ISO, priority lowercase);
+  Dashboard real (snapshot, contadores, check-in, toggle); captura (voz/foto/archivo);
+  surfacing de errores de auth (HumanosLinkState); createTask server-first + setDone
+  (toggle sincronizado, promueve tareas locales); detalle de tareas; ApkInstaller
+  (update desde el telefono) + re-check de updates en ON_RESUME.
+
+### Plan hibrido nativo + WebView (v0.4.0) — ADR-0006
+- **Session bridge**: provider NextAuth `mobile-bridge` (humanos-eco) canjea el
+  bridge JWT por una sesion web → el WebView entra logueado sin Google-OAuth-en-WebView.
+  Pagina `/mobile-login` + `lib/auth/bridge-session.ts` (6 tests). Refs DEC-016, DEC-017, RISK-010.
+- **feature-web** (MOD-018): pestaña "Modulos" → hub de modulos web (home, empresa,
+  estudiante, salud, care, legal) → WebView embebido autenticado. TASK-018..020 DONE.
+- Releases firmados a6041dcf (instalan sobre la version previa sin conflicto).

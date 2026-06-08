@@ -177,3 +177,22 @@
 | RISK-009 | Blaze servicios consumo variable | Baja | Alto | Medio | 2 |
 | RISK-004 | ONNX Runtime low-end devices | Baja | Medio | Bajo | 3 |
 | RISK-005 | Health Connect breaking changes | Baja | Bajo | Bajo | 3 |
+
+---
+
+## RISK-010 — Session bridge emite una sesion web completa desde un bridge JWT (2026-06-08)
+
+**Probabilidad:** Baja · **Impacto:** Alto · **Severidad:** Medio · **Phase:** 2 · **Ref:** ADR-0006, DEC-017
+
+El provider `mobile-bridge` mintea una sesion NextAuth completa a partir de un
+bridge JWT. Forjar uno requiere el secreto compartido (QUEBOT_BRIDGE_SECRET /
+QUEBOT_BACKEND_TOKEN) + token no expirado (15 min, issuer humanos.eco / audience
+quebot). Es el MISMO nivel de confianza que el bridge ya otorga a QueBot y a
+`/api/mobile/*` — sin nueva superficie de ataque.
+
+**Mitigaciones:** fail-closed ante token invalido/expirado, usuario desconocido o
+soft-deleted; no auto-provisiona; el token viaja en el fragment (no se loguea
+server-side) y en un POST HTTPS; 6 tests de seguridad (`bridge-session.test.ts`);
+la rotacion del secreto reinicia ambos servicios Railway.
+
+| RISK-010 | Session bridge emite sesion web desde bridge JWT | Baja | Alto | Medio | 2 |

@@ -257,3 +257,17 @@
 | TASK-008 | Crear pantallas skeleton Compose + nav | `[DONE]` | Media |
 | TASK-009 | Confirmar applicationId definitivo | `[PENDING]` | Alta |
 | TASK-010 | Disenar contrato mobile/exchange | `[PENDING]` | Media |
+
+---
+
+## Tareas plan hibrido (ADR-0006) — 2026-06-08
+
+| ID | Descripcion | Estado | Prioridad |
+|----|-------------|--------|-----------|
+| TASK-018 | Provider NextAuth mobile-bridge + /mobile-login + middleware (humanos-eco) | `[DONE]` | Alta |
+| TASK-019 | Modulo feature-web: WebModulesScreen + WebViewScreen + WebViewModel + nav | `[DONE]` | Alta |
+| TASK-020 | Embeber primer set de modulos (home, empresa, estudiante, salud, care, legal) | `[DONE]` | Alta |
+| TASK-021 | Refinar paths exactos de cada modulo embebido (empresa host-routed) con GPT | `[PENDING]` | Media |
+| TASK-022 | Rewrite nativo selectivo donde la UX nativa gane (post-paridad) | `[PENDING]` | Baja |
+
+- **Refs:** ADR-0006, DEC-016, DEC-017, RISK-010

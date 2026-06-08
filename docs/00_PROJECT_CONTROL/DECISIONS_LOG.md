@@ -191,3 +191,30 @@
 | DEC-013 | Adelantar data-capture a Phase 1 | 2026-06-07 |
 | DEC-014 | Adelantar data-tasks a Phase 1 + offline-first | 2026-06-07 |
 | DEC-015 | Adelantar feature-tasks a Phase 1 | 2026-06-07 |
+
+---
+
+## DEC-016 — Arquitectura hibrida nativo + WebView embebido (2026-06-08)
+
+**Estado:** Aceptada · **Ref:** ADR-0006
+
+Para paridad con la web (empresa, estudiante, care, legal, compliance) en dias en
+vez de meses: la app es hibrida. Compose nativo para lo diario/fundacional
+(dashboard, tareas, captura, salud, check-in) y WebView embebido para los modulos
+web ricos ya existentes, autenticado via session bridge. La web es consumida, no
+forkeada (ADR-0001 intacto). `feature-web` aislado (depende solo de data-auth +
+core-model). Agregar un modulo = una entrada en `WebModule`.
+
+| DEC-016 | Arquitectura hibrida nativo + WebView | 2026-06-08 |
+
+## DEC-017 — Provider NextAuth `mobile-bridge` (2026-06-08)
+
+**Estado:** Aceptada · **Ref:** ADR-0006, RISK-010
+
+humanos-eco `lib/auth.ts` gana un CredentialsProvider que canjea un bridge JWT
+valido por una sesion web NextAuth (logica en `lib/auth/bridge-session.ts`,
+fail-closed, 6 tests vitest). El WebView entra logueado SIN Google-OAuth-en-WebView
+(que Google bloquea). Mismo nivel de confianza que el bridge existente. Pagina
+publica `/mobile-login` + lado nativo `feature-web`.
+
+| DEC-017 | Provider NextAuth mobile-bridge | 2026-06-08 |

@@ -77,3 +77,12 @@ The following are compile-time errors enforced by convention plugins and Gradle 
 4. `:domain-*` modules cannot depend on `:feature-*` or `:data-*` modules (domain is pure logic).
 5. Only `:app` may depend on `:feature-*` modules directly.
 6. `:testing-common` is consumed via `testImplementation` or `androidTestImplementation` only.
+
+---
+
+### MOD-018 · feature-web (2026-06-08, ADR-0006)
+
+Modulos web ricos embebidos via session bridge. `WebModulesScreen` (hub) →
+`WebViewScreen` (WebView autenticado por `/mobile-login` con el bridge token) →
+`WebViewModel` (construye la URL desde `AuthRepository.getHumanosToken()`).
+Depende solo de `data-auth` + `core-model` (aislado). Lista de modulos en `WebModule`.

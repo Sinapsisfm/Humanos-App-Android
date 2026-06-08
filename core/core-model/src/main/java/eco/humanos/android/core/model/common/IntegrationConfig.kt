@@ -37,4 +37,11 @@ object IntegrationConfig {
      * Retrofit resolves relative endpoint paths (e.g. `"tasks"`) correctly.
      */
     const val HUMANOS_BASE_URL: String = "https://www.humanos.eco/api/"
+
+    /**
+     * Origin of the HumanOS web app (no trailing slash) — the base for the
+     * embedded-WebView session bridge (`/mobile-login`, `/empresa`, …). See
+     * `feature-web` and ADR-0006.
+     */
+    const val HUMANOS_WEB_BASE: String = "https://www.humanos.eco"
 }

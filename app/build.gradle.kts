@@ -19,8 +19,8 @@ android {
     defaultConfig {
         // Definitive applicationId confirmed by Felipe 2026-06-07 (Q-003 resolved)
         applicationId = "eco.humanos.android"
-        versionCode = 6
-        versionName = "0.3.2"
+        versionCode = 7
+        versionName = "0.4.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -54,6 +54,7 @@ dependencies {
     implementation(project(":feature:feature-capture"))
     implementation(project(":feature:feature-settings"))
     implementation(project(":feature:feature-tasks"))
+    implementation(project(":feature:feature-web"))
 
     // Core modules
     implementation(project(":core:core-ui"))

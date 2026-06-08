@@ -9,6 +9,8 @@ import eco.humanos.android.feature.capture.CaptureScreen
 import eco.humanos.android.feature.dashboard.DashboardScreen
 import eco.humanos.android.feature.settings.SettingsScreen
 import eco.humanos.android.feature.tasks.TasksScreen
+import eco.humanos.android.feature.web.WebModulesScreen
+import eco.humanos.android.feature.web.WebViewScreen
 
 /**
  * Root navigation host for the humanOS app.
@@ -35,6 +37,17 @@ fun HumanosNavHost(
         }
         composable(TopLevelDestination.CAPTURE.route) {
             CaptureScreen()
+        }
+        composable(TopLevelDestination.MODULES.route) {
+            WebModulesScreen(
+                onOpen = { moduleKey -> navController.navigate("web/$moduleKey") },
+            )
+        }
+        composable("web/{moduleKey}") { backStackEntry ->
+            WebViewScreen(
+                moduleKey = backStackEntry.arguments?.getString("moduleKey").orEmpty(),
+                onBack = { navController.popBackStack() },
+            )
         }
         composable(TopLevelDestination.SETTINGS.route) {
             SettingsScreen()

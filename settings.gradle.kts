@@ -53,6 +53,7 @@ include(":feature:feature-dashboard")
 include(":feature:feature-capture")
 include(":feature:feature-settings")
 include(":feature:feature-tasks")
+include(":feature:feature-web")
 
 // ── Integrations ─────────────────────────────────────────────────────────────
 include(":integrations:integration-humanos")
