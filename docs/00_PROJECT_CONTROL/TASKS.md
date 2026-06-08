@@ -165,7 +165,7 @@
 
 ### TASK-010: Disenar contrato POST /api/auth/mobile/exchange (documentar, no implementar)
 
-- **Estado:** `[PENDING]`
+- **Estado:** `[DONE]` (spec — Tanda 24, ciclo 4). Implementacion en humanos-eco pendiente autorizacion Felipe. Ver `docs/03_INTEGRATIONS/MOBILE_AUTH_ENDPOINT_SPEC.md`
 - **Prioridad:** Media
 - **Descripcion:** Documentar el contrato del endpoint que HumanOS deberia exponer para intercambiar un Firebase ID token por un HumanOS bridge JWT:
   - Request: `POST /api/auth/mobile/exchange` con header `Authorization: Bearer <firebase-id-token>`
