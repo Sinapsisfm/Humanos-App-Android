@@ -261,3 +261,11 @@
   de `<main>` (sin tocar position → header/sidebar intactos). TASK-023 cerrada.
 - Botón compartir arreglado (no hacía nada): ahora COPIA al portapapeles + toast +
   share sheet (más confiable). El "otro bug" que reportó Felipe.
+
+## 2026-06-08 — v0.4.5 (canal directo Felipe↔Claude)
+
+- TASK-027: canal de 2 vías. Endpoint POST/GET /api/mobile/message (dual-auth:
+  sesión web para la app, service-token QUEBOT_BACKEND_TOKEN para el agente),
+  reusa ConversationMessage (sin migración). Página /mobile-chat (chat UI) abierta
+  en el WebView como módulo "Claude". El agente corre un loop que lee y responde.
+- Felipe escribe desde la app → yo leo/respondo sin que vaya al PC.

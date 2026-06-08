@@ -15,6 +15,7 @@ enum class WebModule(
     val path: String,
     val description: String,
 ) {
+    CLAUDE("chat", "Claude (canal directo)", "/mobile-chat", "Escribile a Claude desde la app; responde sin que vayas al PC"),
     HOME("home", "HumanOS web", "/", "Todo el sitio, ya logueado"),
     EMPRESA("empresa", "Empresa", "/empresa", "PME: productos, riesgos, KPIs, proveedores"),
     ESTUDIANTE("estudiante", "Estudiante", "/estudiante", "Tareas, materiales y calendario académico"),
