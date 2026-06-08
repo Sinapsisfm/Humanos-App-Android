@@ -2,9 +2,11 @@ package eco.humanos.android.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.AddCircle
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -26,6 +28,12 @@ enum class TopLevelDestination(
         label = "Inicio",
         selectedIcon = Icons.Filled.Home,
         unselectedIcon = Icons.Outlined.Home,
+    ),
+    TASKS(
+        route = "tasks",
+        label = "Tareas",
+        selectedIcon = Icons.Filled.CheckCircle,
+        unselectedIcon = Icons.Outlined.CheckCircle,
     ),
     CAPTURE(
         route = "capture",

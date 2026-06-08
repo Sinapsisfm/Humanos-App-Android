@@ -162,6 +162,16 @@
 
 ---
 
+## DEC-015: Adelantar feature-tasks a Phase 1
+
+- **Fecha:** 2026-06-07
+- **Decision:** El modulo `feature-tasks` (originalmente Phase 2, MOD-026) se adelanta a Phase 1 como MOD-018. Pantalla Compose de tareas con CRUD real sobre Room via `TaskRepository`.
+- **Contexto:** Con `data-tasks` ya validado (DEC-014) y sus tests verdes, exponerlo en una pantalla funcional es el cierre natural del vertical slice de tareas: el usuario ve, crea, completa y borra tareas que persisten. Cuarto destino en el bottom nav.
+- **Consecuencias:** Phase 1 pasa de 17 a 18 modulos. Bottom nav: Dashboard, Tareas, Capturar, Config. Vertical slice de tareas completo (model -> entity -> dao -> repository -> viewmodel -> screen -> nav), todo testeado.
+- **Refs:** DEC-014, REQ-TASK-001, TASK-008
+
+---
+
 ## Indice rapido
 
 | ID | Titulo | Fecha |
@@ -180,3 +190,4 @@
 | DEC-012 | TraceEvent canonico en core-model | 2026-06-07 |
 | DEC-013 | Adelantar data-capture a Phase 1 | 2026-06-07 |
 | DEC-014 | Adelantar data-tasks a Phase 1 + offline-first | 2026-06-07 |
+| DEC-015 | Adelantar feature-tasks a Phase 1 | 2026-06-07 |

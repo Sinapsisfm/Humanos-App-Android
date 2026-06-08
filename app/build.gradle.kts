@@ -22,6 +22,7 @@ dependencies {
     implementation(project(":feature:feature-dashboard"))
     implementation(project(":feature:feature-capture"))
     implementation(project(":feature:feature-settings"))
+    implementation(project(":feature:feature-tasks"))
 
     // Core modules
     implementation(project(":core:core-ui"))

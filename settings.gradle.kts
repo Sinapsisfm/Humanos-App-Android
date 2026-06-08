@@ -51,6 +51,7 @@ include(":data:data-tasks")
 include(":feature:feature-dashboard")
 include(":feature:feature-capture")
 include(":feature:feature-settings")
+include(":feature:feature-tasks")
 
 // ── Integrations ─────────────────────────────────────────────────────────────
 include(":integrations:integration-humanos")

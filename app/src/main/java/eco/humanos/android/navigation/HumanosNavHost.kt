@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import eco.humanos.android.feature.capture.CaptureScreen
 import eco.humanos.android.feature.dashboard.DashboardScreen
 import eco.humanos.android.feature.settings.SettingsScreen
+import eco.humanos.android.feature.tasks.TasksScreen
 
 /**
  * Root navigation host for the humanOS app.
@@ -28,6 +29,9 @@ fun HumanosNavHost(
     ) {
         composable(TopLevelDestination.DASHBOARD.route) {
             DashboardScreen()
+        }
+        composable(TopLevelDestination.TASKS.route) {
+            TasksScreen()
         }
         composable(TopLevelDestination.CAPTURE.route) {
             CaptureScreen()
