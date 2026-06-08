@@ -12,6 +12,9 @@ dependencies {
     implementation(project(":core:core-network"))
     implementation(project(":core:core-datastore"))
     implementation(project(":core:core-security"))
+    // HumanOS Retrofit service for the Firebase -> bridge-token exchange
+    // (used only when IntegrationConfig.USE_REAL_HUMANOS_AUTH is true).
+    implementation(project(":integrations:integration-humanos"))
 
     implementation(libs.kotlinx.coroutines.android)
     // Bridges Firebase/Play Services Task<T> to suspend via Task.await()
