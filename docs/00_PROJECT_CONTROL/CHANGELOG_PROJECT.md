@@ -137,6 +137,40 @@
 - BUILD SUCCESSFUL 451 tasks
 - Refs: DEC-013, TASK-007, REQ-CAP-001
 
+### Tanda 15: Tests unitarios (commit fb99dff)
+
+- 33 tests JVM: mappers Room (round-trip), converters, modelos
+- Fix CI: agregado task `test` para cubrir modulos Kotlin puro
+- CI #6 verde
+
+### Tanda 16: data-tasks offline-first (commit c0fee88)
+
+- Modulo data-tasks (MOD-017, DEC-014)
+- TaskRepository: HumanosGateway -> Room -> UI (NetworkBoundResource)
+- DashboardViewModel offline-first, 4 tests repo
+
+### Tanda 17: ViewModel tests (commit 1a8fbd2)
+
+- 9 tests: Dashboard/Capture/Settings ViewModels con fakes + Turbine
+- 46 tests totales
+
+### Tanda 18: feature-tasks screen (commit fbce65f)
+
+- Modulo feature-tasks (MOD-018, DEC-015)
+- Pantalla Tasks CRUD desde Room, 4to destino bottom nav
+- TasksViewModel + 5 tests, 51 tests totales
+
+### Tanda 19: observability persistente (commit 0691262)
+
+- RoomTraceRepository: audit trail durable en Room (era in-memory)
+- ObservabilityModule rebind, core-observability -> core-database
+
+### Tanda 20: cierre Phase 1
+
+- PHASE1_CLOSURE.md: inventario, deuda tecnica (TD-01 a TD-08), roadmap Phase 2/3, checklist
+- CURRENT_STATE actualizado a estado de cierre
+- Phase 1 COMPLETO: 24 commits, 18 modulos, 51 tests, build verde local + CI
+
 ### Tanda 7: Sincronizacion de documentacion
 
 - CURRENT_STATE.md reescrito completamente con estado real
