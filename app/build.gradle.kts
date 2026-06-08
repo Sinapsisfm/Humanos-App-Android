@@ -2,14 +2,15 @@ plugins {
     id("humanos.android.application")
     id("humanos.compose")
     id("humanos.hilt")
+    alias(libs.plugins.google.services)
 }
 
 android {
     namespace = "eco.humanos.android"
 
     defaultConfig {
-        // TEMPORARY applicationId — will change to eco.humanos.android before release
-        applicationId = "eco.humanos.android.dev"
+        // Definitive applicationId confirmed by Felipe 2026-06-07 (Q-003 resolved)
+        applicationId = "eco.humanos.android"
         versionCode = 1
         versionName = "0.1.0"
 
@@ -35,6 +36,11 @@ dependencies {
 
     // Data modules
     implementation(project(":data:data-auth"))
+
+    // Firebase (BOM manages versions)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.analytics)
 
     // Icons (extended set for navigation icons)
     implementation(libs.androidx.compose.material.icons.extended)
