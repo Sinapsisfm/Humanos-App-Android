@@ -41,7 +41,9 @@ jobs:
         run: ./gradlew lintDebug --continue
 
       - name: Run unit tests
-        run: ./gradlew testDebugUnitTest --continue
+        # testDebugUnitTest covers Android library modules; `test` covers pure-Kotlin
+        # modules (core-model, testing-common) which bind to Gradle's `test` task.
+        run: ./gradlew testDebugUnitTest test --continue
 
       - name: Upload lint results
         if: always()
