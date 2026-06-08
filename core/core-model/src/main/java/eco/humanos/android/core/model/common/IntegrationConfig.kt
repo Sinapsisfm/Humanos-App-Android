@@ -30,7 +30,7 @@ object IntegrationConfig {
      *
      * Default `false` keeps the mock auth path and fake gateways.
      */
-    const val USE_REAL_HUMANOS_AUTH: Boolean = false
+    const val USE_REAL_HUMANOS_AUTH: Boolean = true
 
     /**
      * Base URL of the HumanOS REST API. Must end with a trailing slash so

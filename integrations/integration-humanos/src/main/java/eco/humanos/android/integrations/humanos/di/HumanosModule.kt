@@ -4,51 +4,44 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import eco.humanos.android.integrations.humanos.FakeHumanosGateway
 import eco.humanos.android.integrations.humanos.HumanosGateway
-import eco.humanos.android.integrations.humanos.HumanosTokenProvider
-import eco.humanos.android.integrations.humanos.NullHumanosTokenProvider
 import eco.humanos.android.integrations.humanos.RealHumanosGateway
 import javax.inject.Singleton
 
 /**
- * Binds the HumanOS gateway and its token provider.
+ * Binds the HumanOS gateway to its real, network-backed implementation.
  *
- * ## Gateway swap point (go-live)
- * The app ships with [FakeHumanosGateway] bound so it builds and runs entirely
- * offline. To switch to the real backend once
- * `POST /api/auth/mobile/exchange` is deployed and
+ * ## Live (real backend)
+ * As of go-live —
  * [eco.humanos.android.core.model.common.IntegrationConfig.USE_REAL_HUMANOS_AUTH]
- * is `true`:
+ * `= true` and `POST /api/auth/mobile/exchange` deployed — [RealHumanosGateway]
+ * is bound here and talks to the real HumanOS REST API via `HumanosApiService`
+ * (Retrofit stack in `HumanosNetworkModule`).
  *
- * 1. Change [bindHumanosGateway]'s parameter type from `FakeHumanosGateway`
- *    to [RealHumanosGateway] (the only edit needed here):
- *    ```
- *    abstract fun bindHumanosGateway(real: RealHumanosGateway): HumanosGateway
- *    ```
- * 2. Replace [bindHumanosTokenProvider]'s [NullHumanosTokenProvider] with the
- *    real provider exposed by `data-auth` (backed by the cached bridge session).
+ * ## Token provider lives in `data-auth`
+ * [RealHumanosGateway] needs the **bridge JWT** for authenticated calls; that
+ * token is owned by `data-auth` (which performs the Firebase -> bridge exchange
+ * and caches the session in the Secure Vault). The `HumanosTokenProvider`
+ * binding is therefore provided by `data-auth`'s `AuthModule`
+ * (`VaultHumanosTokenProvider`) — **not here** — so the graph has exactly one
+ * binding for it. Binding it here too would be a duplicate-binding Hilt error.
  *
- * Both [RealHumanosGateway] and its Retrofit dependencies (see
- * `HumanosNetworkModule`) are already in the graph, so the swap is a two-line
- * change with no new wiring.
+ * ## Reverting to offline fakes (dev only)
+ * To run fully offline again, rebind `FakeHumanosGateway` here, flip the flag
+ * back to `false`, and restore a `NullHumanosTokenProvider` binding (removing
+ * `data-auth`'s `VaultHumanosTokenProvider` binding to avoid a duplicate).
  */
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class HumanosModule {
 
-    // ── Gateway ──────────────────────────────────────────────────────────────
-    // DEFAULT: fake gateway (offline). Swap to RealHumanosGateway to go live.
+    // LIVE: real network gateway. (Rebind FakeHumanosGateway to go offline.)
     @Binds
     @Singleton
-    abstract fun bindHumanosGateway(fake: FakeHumanosGateway): HumanosGateway
+    abstract fun bindHumanosGateway(real: RealHumanosGateway): HumanosGateway
 
-    // ── Bridge token provider ────────────────────────────────────────────────
-    // DEFAULT: null provider (no token). Swap to the data-auth-backed provider
-    // when going live so RealHumanosGateway can authenticate API calls.
-    @Binds
-    @Singleton
-    abstract fun bindHumanosTokenProvider(
-        impl: NullHumanosTokenProvider,
-    ): HumanosTokenProvider
+    // NOTE: HumanosTokenProvider is intentionally NOT bound here. Its single
+    // binding (VaultHumanosTokenProvider) lives in data-auth's AuthModule, which
+    // reads the bridge token from the Secure Vault. Adding a binding here would
+    // be a duplicate-binding Hilt error.
 }
