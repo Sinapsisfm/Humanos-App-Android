@@ -44,6 +44,15 @@ interface TaskRepository {
     /** Upsert an existing [task], replacing the stored copy. */
     suspend fun updateTask(task: TaskItem)
 
+    /**
+     * Mark [task] done/undone, syncing the change to HumanOS so it matches the
+     * web. If the task isn't on the server yet (a local-only task created
+     * offline), it is promoted — created remotely first — then the status is
+     * applied, and the local-only copy is replaced by the server copy. Returns
+     * the propagated failure if the remote call fails.
+     */
+    suspend fun setDone(task: TaskItem, done: Boolean): Result<Unit>
+
     /** Delete the task with the given [id], if it exists. */
     suspend fun deleteTask(id: String)
 }

@@ -59,21 +59,26 @@ class TaskRepositoryImpl @Inject constructor(
         description: String?,
         priority: TaskPriority,
     ): String {
-        val id = UUID.randomUUID().toString()
         val now = System.currentTimeMillis()
 
-        val task = TaskItem(
-            id = id,
-            title = title,
-            description = description,
-            status = TaskStatus.PENDING,
-            priority = priority,
-            origin = EntityOrigin.MANUAL,
-            governanceState = GovernanceState.CONFIRMED,
-            source = IntegrationSource.LOCAL,
-            createdAt = now,
-            updatedAt = now,
-        )
+        // Server-first: create on HumanOS so the task gets a real id and shows up
+        // on the web. If offline / the call fails, fall back to a local-only task
+        // (it'll be promoted to the server the next time it's toggled).
+        val remote = humanosGateway.createTask(title, description, priority)
+        val task = remote.getOrElse {
+            TaskItem(
+                id = UUID.randomUUID().toString(),
+                title = title,
+                description = description,
+                status = TaskStatus.PENDING,
+                priority = priority,
+                origin = EntityOrigin.MANUAL,
+                governanceState = GovernanceState.CONFIRMED,
+                source = IntegrationSource.LOCAL,
+                createdAt = now,
+                updatedAt = now,
+            )
+        }
 
         taskDao.upsert(task.toEntity())
 
@@ -81,20 +86,50 @@ class TaskRepositoryImpl @Inject constructor(
             TraceEvent(
                 id = UUID.randomUUID().toString(),
                 entityType = "task",
-                entityId = id,
+                entityId = task.id,
                 action = "created",
-                source = IntegrationSource.LOCAL,
+                source = if (remote.isSuccess) IntegrationSource.HUMANOS else IntegrationSource.LOCAL,
                 userId = "local-user",
                 metadata = null,
                 timestamp = now,
             ),
         )
 
-        return id
+        return task.id
     }
 
     override suspend fun updateTask(task: TaskItem) {
         taskDao.upsert(task.toEntity())
+    }
+
+    override suspend fun setDone(task: TaskItem, done: Boolean): Result<Unit> = runCatching {
+        val status = if (done) "done" else "pending"
+        val remoteId = task.remoteId
+
+        val serverTask = if (remoteId != null) {
+            humanosGateway.updateTaskStatus(remoteId, status).getOrThrow()
+        } else {
+            // Local-only task (created offline / before the bridge existed). Promote
+            // it to the server, drop the local-only duplicate, then apply the status.
+            val created = humanosGateway.createTask(task.title, task.description, task.priority).getOrThrow()
+            taskDao.deleteById(task.id)
+            if (done) humanosGateway.updateTaskStatus(created.id, status).getOrThrow() else created
+        }
+
+        taskDao.upsert(serverTask.toEntity())
+
+        traceRepository.logEvent(
+            TraceEvent(
+                id = UUID.randomUUID().toString(),
+                entityType = "task",
+                entityId = serverTask.id,
+                action = if (done) "completed" else "reopened",
+                source = IntegrationSource.HUMANOS,
+                userId = "local-user",
+                metadata = null,
+                timestamp = System.currentTimeMillis(),
+            ),
+        )
     }
 
     override suspend fun deleteTask(id: String) {

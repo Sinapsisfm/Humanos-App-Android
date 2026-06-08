@@ -3,6 +3,7 @@ package eco.humanos.android.feature.dashboard
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,6 +54,7 @@ fun DashboardScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var showCheckIn by remember { mutableStateOf(false) }
+    var selectedTask by remember { mutableStateOf<TaskItem?>(null) }
 
     if (uiState.isLoading) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -127,7 +129,11 @@ fun DashboardScreen(
             }
 
             items(uiState.tasks, key = { it.id }) { task ->
-                TaskRow(task = task, onToggle = { viewModel.toggleTaskDone(task) })
+                TaskRow(
+                    task = task,
+                    onToggle = { viewModel.toggleTaskDone(task) },
+                    onClick = { selectedTask = task },
+                )
             }
         }
     }
@@ -139,6 +145,14 @@ fun DashboardScreen(
                 viewModel.submitCheckIn(energy, mood, stress, note)
                 showCheckIn = false
             },
+        )
+    }
+
+    selectedTask?.let { task ->
+        TaskDetailDialog(
+            task = task,
+            onToggle = { viewModel.toggleTaskDone(task) },
+            onDismiss = { selectedTask = null },
         )
     }
 }
@@ -267,9 +281,9 @@ private fun StateCard(
 }
 
 @Composable
-private fun TaskRow(task: TaskItem, onToggle: () -> Unit) {
+private fun TaskRow(task: TaskItem, onToggle: () -> Unit, onClick: () -> Unit) {
     val done = task.status == TaskStatus.DONE
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()

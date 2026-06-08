@@ -36,6 +36,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import eco.humanos.android.core.model.auth.AuthState
 import eco.humanos.android.core.update.ApkInstaller
@@ -52,6 +54,10 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    // Re-check for updates whenever Settings becomes visible, so a newly
+    // published release surfaces without an app restart.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshUpdate() }
 
     val humanosLabel = if (uiState.isCheckingConnections) {
         "verificando..."

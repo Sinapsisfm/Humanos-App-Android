@@ -68,11 +68,13 @@ class TaskRepositoryImplTest {
 
         override suspend fun fetchTasks(status: String?): Result<List<TaskItem>> = tasksResult
 
+        // Simulate offline so createTask exercises the local fallback path
+        // (the repo is server-first; a failure here means "store locally").
         override suspend fun createTask(
             title: String,
             description: String?,
             priority: TaskPriority,
-        ): Result<TaskItem> = error("not used in these tests")
+        ): Result<TaskItem> = Result.failure(IllegalStateException("offline (test)"))
 
         override suspend fun fetchDailyReview(): Result<DailyReviewDto> =
             error("not used in these tests")

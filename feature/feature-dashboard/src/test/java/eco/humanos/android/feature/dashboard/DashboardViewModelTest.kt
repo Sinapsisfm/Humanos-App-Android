@@ -62,6 +62,7 @@ class DashboardViewModelTest {
         }
         override suspend fun createTask(title: String, description: String?, priority: TaskPriority): String = "x"
         override suspend fun updateTask(task: TaskItem) = Unit
+        override suspend fun setDone(task: TaskItem, done: Boolean): Result<Unit> = Result.success(Unit)
         override suspend fun deleteTask(id: String) = Unit
     }
 

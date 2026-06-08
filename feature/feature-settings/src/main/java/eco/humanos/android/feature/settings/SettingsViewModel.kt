@@ -107,6 +107,13 @@ class SettingsViewModel @Inject constructor(
     fun recheckUpdate() = checkForUpdate(manual = true)
 
     /**
+     * Silent re-check run whenever the Settings screen is resumed, so the update
+     * banner shows up without an app restart (init alone misses a release that
+     * was published after the ViewModel was first created).
+     */
+    fun refreshUpdate() = checkForUpdate(manual = false)
+
+    /**
      * Runs the Google Sign-In flow. [activityContext] must be an Activity
      * context because the Credential Manager shows UI anchored to it.
      */

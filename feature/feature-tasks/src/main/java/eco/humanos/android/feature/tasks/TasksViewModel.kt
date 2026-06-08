@@ -75,16 +75,9 @@ class TasksViewModel @Inject constructor(
      * [TaskItem.completedAt]; when reopening, clear it. Bumps [TaskItem.updatedAt].
      */
     fun toggleTaskDone(task: TaskItem) {
-        val now = System.currentTimeMillis()
-        val markDone = task.status != TaskStatus.DONE
-        val updated = task.copy(
-            status = if (markDone) TaskStatus.DONE else TaskStatus.PENDING,
-            completedAt = if (markDone) now else null,
-            updatedAt = now,
-        )
-
         viewModelScope.launch {
-            runCatching { taskRepository.updateTask(updated) }
+            val done = task.status != TaskStatus.DONE
+            taskRepository.setDone(task, done)
                 .onFailure { error ->
                     _uiState.update { it.copy(error = error.message) }
                 }

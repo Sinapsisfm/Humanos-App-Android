@@ -173,12 +173,11 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    /** Toggle a task done/pending on the server, then refresh. */
+    /** Toggle a task done/pending (server-synced via the repository), then refresh. */
     fun toggleTaskDone(task: TaskItem) {
-        val remoteId = task.remoteId ?: task.id
-        val newStatus = if (task.status == TaskStatus.DONE) "pending" else "done"
         viewModelScope.launch {
-            humanosGateway.updateTaskStatus(remoteId, newStatus)
+            val done = task.status != TaskStatus.DONE
+            taskRepository.setDone(task, done)
                 .onSuccess { refresh() }
                 .onFailure { e -> _uiState.update { it.copy(error = e.toHumanosErrorMessage()) } }
         }
