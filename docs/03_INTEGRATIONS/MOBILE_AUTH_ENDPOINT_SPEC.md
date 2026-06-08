@@ -121,7 +121,11 @@ export async function POST(req: NextRequest) {
 ## Seguridad
 
 1. **Verificar SIEMPRE el Firebase token server-side** con Firebase Admin SDK. Nunca confiar en claims sin verificar.
-2. **Verificar el `aud` (audience)** del Firebase token == project number de humanos-app (822563196400). Evita tokens de otros proyectos Firebase.
+2. **Verificar el `aud` (audience)** del Firebase token == **project ID** `humanos-app` (NO el project number 822563196400) y el `iss` == `https://securetoken.google.com/humanos-app`. Esto es lo que hace `firebase-verify.ts`. Evita tokens de otros proyectos Firebase. (Correccion GPT: el audience es el project ID, no el number.)
+3. **Verificar `email_verified === true`** antes de vincular por email — evita account takeover via email no verificado que coincida. Implementado: 403 EMAIL_NOT_VERIFIED.
+4. **Account linking estricto** con deteccion de conflicto → 409 ACCOUNT_CONFLICT (firebaseUid o humanosUserId ya vinculados a otra identidad). Implementado.
+5. **Deuda TD-AUTH-REVOCATION**: jose NO chequea revocacion/usuarios deshabilitados. Para prod seria, evaluar firebase-admin o un check backend. Aceptable para beta cerrada.
+6. **Tests de seguridad pendientes** antes de merge a prod: 401 (missing/malformed/invalid-sig/wrong-iss/wrong-aud/expired), 403 (unverified/not-provisioned), 409 (conflict), 200 (linked).
 3. **Rate limiting** por IP y por uid (el endpoint actual de HumanOS ya tiene patrones de rate limit reutilizables).
 4. **El bridge JWT es HS256 con QUEBOT_BRIDGE_SECRET** — mismo secret que ya usa el ecosistema. TTL corto (15 min). El app refresca cuando expira.
 5. **NO logear el Firebase token ni el bridge JWT** (van en headers, no en body, para minimizar exposicion).
