@@ -110,6 +110,33 @@
 - Verificacion estatica de imports y consistencia de codigo
 - Refs: DEC-004
 
+### Tanda 11-12: Build verificado + GitHub + CI (commits 2e115ba, 18e2de9)
+
+- Felipe instalo Android Studio Quail 1 (Java 21 + Android SDK 36)
+- Corregidos 5 errores de build: dependencyResolutionManagement, import JavaVersion x3, smart cast
+- BUILD SUCCESSFUL, APK 20 MB
+- Repo creado: github.com/Sinapsisfm/Humanos-App-Android
+- CI #1 fallo (gradlew sin exec), fix con chmod +x, CI #2 VERDE en GitHub Actions
+- Decision Felipe: GCP diferido, features primero
+- Refs: TASK-003, TASK-004
+
+### Tanda 13: Room database wiring (commit 025db31)
+
+- core-database con Room real: 3 entities, 3 DAOs, converters, DatabaseModule Hilt
+- core-model queda puro (entities separadas, mappers bridge)
+- Schema v1 exportado y commiteado
+- BUILD SUCCESSFUL 417 tasks
+- Refs: TASK-007, DEC-012
+
+### Tanda 14: data-capture + ADR Room (commit 839799f)
+
+- Modulo data-capture (MOD-016, adelantado de Phase 2 por DEC-013)
+- CaptureRepository + Impl usando CaptureDao: capturas persisten en Room
+- feature-capture rewired: ViewModel usa repository, pantalla muestra capturas guardadas
+- ADR-0005: Room entity/domain separation formalizado
+- BUILD SUCCESSFUL 451 tasks
+- Refs: DEC-013, TASK-007, REQ-CAP-001
+
 ### Tanda 7: Sincronizacion de documentacion
 
 - CURRENT_STATE.md reescrito completamente con estado real
