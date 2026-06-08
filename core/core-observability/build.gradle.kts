@@ -9,6 +9,7 @@ android {
 
 dependencies {
     implementation(project(":core:core-model"))
+    implementation(project(":core:core-database"))
 
     implementation(libs.timber)
     implementation(libs.kotlinx.coroutines.android)
