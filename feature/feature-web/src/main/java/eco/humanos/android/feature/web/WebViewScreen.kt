@@ -1,8 +1,12 @@
 package eco.humanos.android.feature.web
 
 import android.annotation.SuppressLint
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.widget.Toast
 import android.webkit.ConsoleMessage
 import android.webkit.CookieManager
 import android.webkit.WebChromeClient
@@ -109,16 +113,20 @@ fun WebViewScreen(
                         Icon(Icons.Filled.BugReport, contentDescription = "Diagnóstico")
                     }
                     IconButton(onClick = {
+                        val report = debugReport()
+                        // Copy to clipboard (reliable) + a toast, then also offer the
+                        // share sheet. Felipe can paste the diagnostic anywhere.
+                        runCatching {
+                            val cb = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            cb.setPrimaryClip(ClipData.newPlainText("humanOS diag", report))
+                        }
+                        Toast.makeText(context, "Diagnóstico copiado al portapapeles", Toast.LENGTH_SHORT).show()
                         val send = Intent(Intent.ACTION_SEND).apply {
                             type = "text/plain"
-                            putExtra(Intent.EXTRA_SUBJECT, "humanOS — diagnóstico WebView")
-                            putExtra(Intent.EXTRA_TEXT, debugReport())
+                            putExtra(Intent.EXTRA_TEXT, report)
                         }
                         runCatching {
-                            context.startActivity(
-                                Intent.createChooser(send, "Compartir diagnóstico")
-                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                            )
+                            context.startActivity(Intent.createChooser(send, "Compartir diagnóstico"))
                         }
                     }) {
                         Icon(Icons.Filled.Share, contentDescription = "Compartir diagnóstico")
@@ -173,7 +181,10 @@ fun WebViewScreen(
                                     javaScriptCanOpenWindowsAutomatically = true
                                     setSupportMultipleWindows(false)
                                     useWideViewPort = true
-                                    loadWithOverviewMode = true
+                                    // overview mode mis-computes viewport height
+                                    // for app-shell layouts → body collapsed to 0
+                                    // (blank content). Off = use the real viewport.
+                                    loadWithOverviewMode = false
                                     mediaPlaybackRequiresUserGesture = false
                                     mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
                                     cacheMode = WebSettings.LOAD_DEFAULT
@@ -220,9 +231,12 @@ fun WebViewScreen(
 
                                     override fun onPageFinished(view: WebView?, url: String?) {
                                         canGoBack = view?.canGoBack() == true
-                                        // Probe the DOM ~1.6s after load (post-hydration)
-                                        // to tell layout-collapse from empty-content.
+                                        // Force concrete pixel heights (not vh/dvh,
+                                        // which collapse in this WebView) so the
+                                        // content is visible. Re-apply post-hydration.
+                                        view?.evaluateJavascript(HEIGHT_FIX_JS, null)
                                         view?.postDelayed({
+                                            view.evaluateJavascript(HEIGHT_FIX_JS, null)
                                             view.evaluateJavascript(DOM_PROBE_JS) { result ->
                                                 domProbe = result.trim().trim('"').replace("\\\"", "\"")
                                             }
@@ -298,6 +312,28 @@ fun WebViewScreen(
  * shell — distinguishes a layout collapse (mainHeight ~0) from empty data
  * (mainChildren 0) from a redirect (unexpected url).
  */
+/**
+ * Force concrete pixel heights so the page content is visible. The web shell
+ * uses viewport-height units (vh/dvh) that collapse to ~0 in this WebView
+ * (probe showed bodyH:0 with real content present). We set html/body to the
+ * real innerHeight and un-collapse any 0-height/overflow-hidden ancestor of
+ * <main> — without touching position (keeps the header/sidebar intact).
+ */
+private const val HEIGHT_FIX_JS = """
+(function(){try{
+  var h=(window.innerHeight||600)+'px';
+  var d=document.documentElement, b=document.body;
+  d.style.minHeight=h; b.style.minHeight=h; b.style.height='auto'; b.style.overflowY='auto';
+  var el=document.querySelector('main');
+  while(el && el!==b){
+    var cs=getComputedStyle(el);
+    if(cs.overflowY==='hidden') el.style.overflowY='visible';
+    if(el.clientHeight===0 && el.scrollHeight>5){ el.style.height='auto'; el.style.minHeight=h; }
+    el=el.parentElement;
+  }
+}catch(e){}})();
+"""
+
 private const val DOM_PROBE_JS = """
 (function(){
   try {

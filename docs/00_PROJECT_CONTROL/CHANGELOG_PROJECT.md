@@ -250,3 +250,14 @@
 - Emulador (pedido de Felipe): requiere cmdline-tools + system image (~1.5GB) +
   AVD + workaround de login Google → esfuerzo dedicado (TASK-026). El sondeo DOM
   resuelve este round sin emulador.
+
+## 2026-06-08 — v0.4.4 (contenido WebView visible)
+
+- Sondeo DOM (leído del screenshot de Felipe): `mainExists:true, mainH:7937,
+  textLen:6598, bodyH:0` → el contenido EXISTE pero el `<body>` colapsa a altura 0
+  (el shell web usa unidades vh/dvh que el WebView no calcula bien).
+- Fix: `loadWithOverviewMode=false` + inyección JS (HEIGHT_FIX_JS) que fuerza
+  html/body a innerHeight en PÍXELES + des-colapsa ancestros 0-height/overflow-hidden
+  de `<main>` (sin tocar position → header/sidebar intactos). TASK-023 cerrada.
+- Botón compartir arreglado (no hacía nada): ahora COPIA al portapapeles + toast +
+  share sheet (más confiable). El "otro bug" que reportó Felipe.
