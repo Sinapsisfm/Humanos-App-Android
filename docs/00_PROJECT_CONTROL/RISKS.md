@@ -104,12 +104,29 @@
 - **Impacto:** Medio (throttling o costos inesperados si se exceden quotas)
 - **Descripcion:** El proyecto Firebase `humanos-app` puede tener otros servicios activos (web apps, Cloud Functions, Firestore) que ya consumen quota. Agregar una app Android con potencialmente miles de usuarios puede empujar el proyecto a limites de quota de Auth (10K users gratis), Firestore reads, o Cloud Messaging.
 - **Mitigacion:**
-  1. Monitorear billing y quota dashboards en GCP Console antes de launch
-  2. Configurar billing alerts (ej. alerta a $50/mes, cap a $100/mes)
+  1. ✅ HECHO (2026-06-07): Budget alert "humanos-app Firebase guard" creado en GCP Billing. $10/mes con alertas a $5 (50%), $9 (90%), $10 (100%) por email a admins + propietarios. Scope: solo proyecto humanos-app
+  2. Monitorear billing y quota dashboards en GCP Console
   3. Si quota es un problema, evaluar Firebase project separado para la app Android (implica resolver Q-001)
-  4. Phase 1 con mocks no genera carga real en Firebase
+  4. Phase 1-2 con Auth/Analytics no genera carga real significativa (capa gratis Blaze: 50K MAU)
 - **Owner:** Felipe
-- **Refs:** Q-001
+- **Refs:** Q-001, RISK-009
+
+---
+
+## RISK-009: Blaze enciende servicios de consumo variable sin control
+
+- **Fecha identificado:** 2026-06-07 (observacion de GPT al habilitar Firebase)
+- **Severidad:** Medio
+- **Probabilidad:** Baja (con mitigacion)
+- **Impacto:** Alto (factura inesperada si se activan servicios sin limite)
+- **Descripcion:** Al habilitar Firebase, humanos-app quedo en plan Blaze (pago por uso) porque el GCP project ya tenia billing habilitado. Auth (50K MAU) y Analytics son gratis en Blaze. El riesgo NO es Auth/Analytics — es encender Cloud Functions, Cloud Storage, Firestore, o logging sin limites, que cobran por uso por encima de la capa gratis.
+- **Mitigacion:**
+  1. ✅ HECHO: Budget alert a $10/mes (RISK-006 mitigacion 1)
+  2. NO activar Cloud Functions / Storage / Firestore / Cloud Run nuevos sin decision explicita de Felipe + revision de pricing
+  3. Cualquier servicio de consumo variable requiere su propio limite/quota antes de activarse
+  4. Phase 2 usa solo Auth + Analytics (gratis). El bridge HumanOS no usa servicios GCP de humanos-app
+- **Owner:** Felipe + Claude (no encender servicios sin confirmacion)
+- **Refs:** RISK-006, DEC-005
 
 ---
 
@@ -157,5 +174,6 @@
 | RISK-003 | Permisos camara/mic rechazados | Media | Medio | Medio | 1 |
 | RISK-006 | Firebase quota limits | Media | Medio | Medio | 1 |
 | RISK-008 | Licencia MIT sin claridad IP | Media | Medio | Medio | 1 |
+| RISK-009 | Blaze servicios consumo variable | Baja | Alto | Medio | 2 |
 | RISK-004 | ONNX Runtime low-end devices | Baja | Medio | Bajo | 3 |
 | RISK-005 | Health Connect breaking changes | Baja | Bajo | Bajo | 3 |
