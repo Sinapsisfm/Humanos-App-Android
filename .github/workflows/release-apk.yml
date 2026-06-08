@@ -30,6 +30,7 @@ jobs:
     # is mapped here once and reused below.
     env:
       GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+      DEBUG_KEYSTORE_B64: ${{ secrets.DEBUG_KEYSTORE_B64 }}
 
     steps:
       - uses: actions/checkout@v4
@@ -44,6 +45,24 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+
+      # CRITICAL: sign the released APK with the SAME debug keystore registered
+      # in Firebase (SHA-1 A6:04:1D:CF:...). Otherwise the runner auto-generates
+      # a random debug keystore → Google Sign-In fails ("no credential available")
+      # AND the APK won't install over a previously-installed build (signature
+      # mismatch → "package conflict"). We overwrite ~/.android/debug.keystore so
+      # Gradle's default debug signing uses Felipe's keystore.
+      - name: Use the registered debug keystore
+        if: ${{ env.DEBUG_KEYSTORE_B64 != '' }}
+        run: |
+          mkdir -p "$HOME/.android"
+          echo "$DEBUG_KEYSTORE_B64" | base64 --decode > "$HOME/.android/debug.keystore"
+          echo "Restored the registered debug keystore ($(wc -c < "$HOME/.android/debug.keystore") bytes)."
+
+      - name: Warn if debug keystore secret is missing
+        if: ${{ env.DEBUG_KEYSTORE_B64 == '' }}
+        run: |
+          echo "::warning::DEBUG_KEYSTORE_B64 secret not set. The runner will auto-generate a random debug keystore — Google Sign-In will fail and the APK won't install as an update. Add the secret (base64 of ~/.android/debug.keystore)."
 
       # Inject the Firebase config so the released APK has working Google Sign-In.
       # If the secret is absent the build still succeeds (the google-services
