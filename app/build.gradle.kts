@@ -2,7 +2,15 @@ plugins {
     id("humanos.android.application")
     id("humanos.compose")
     id("humanos.hilt")
-    alias(libs.plugins.google.services)
+}
+
+// Apply the google-services plugin only when google-services.json is present.
+// The file is gitignored (contains the Firebase config), so it exists locally
+// and in environments that inject it, but NOT on bare CI runners. This keeps
+// CI green (compile + unit tests) without committing secrets or requiring a
+// GitHub Secret. Firebase runtime features require the file to be present.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
 }
 
 android {
