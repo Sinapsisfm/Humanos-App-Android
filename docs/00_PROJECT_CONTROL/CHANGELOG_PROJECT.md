@@ -289,3 +289,10 @@
 - Canal: founder-only (resolveFounder + allowlist), imágenes (TASK-028), 2 vías.
 - PENDIENTE: logo de la app (no encontré el PNG en humanos-eco/public; Felipe lo
   manda o lo busco en sesión enfocada). TASK-032.
+
+## 2026-06-08 — v0.4.8 (ícono favicon + 📎 funciona)
+
+- Ícono de la app: ahora es el favicon de HumanOS (ADN morado, app/icon.svg
+  renderizado con sharp a mipmaps 48..192; adaptive XML reemplazado por PNGs). TASK-032.
+- 📎 adjuntar: el WebView no abría el selector de archivos sin onShowFileChooser.
+  Agregado al WebChromeClient → el botón clip ahora abre la galería. TASK-033.

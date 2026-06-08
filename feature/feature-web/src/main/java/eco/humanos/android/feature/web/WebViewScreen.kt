@@ -7,10 +7,12 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.net.Uri
 import android.speech.RecognizerIntent
 import android.widget.Toast
 import android.webkit.ConsoleMessage
 import android.webkit.CookieManager
+import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -110,6 +112,16 @@ fun WebViewScreen(
                 webView?.evaluateJavascript(js, null)
             }
         }
+    }
+
+    // File picker for the chat's attach (📎) button — the WebView's <input
+    // type=file> does nothing unless onShowFileChooser launches a picker.
+    var filePathCallback by remember { mutableStateOf<ValueCallback<Array<Uri>>?>(null) }
+    val fileChooser = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent(),
+    ) { uri ->
+        filePathCallback?.onReceiveValue(if (uri != null) arrayOf(uri) else null)
+        filePathCallback = null
     }
 
     BackHandler(enabled = true) {
@@ -250,6 +262,22 @@ fun WebViewScreen(
 
                                     override fun onProgressChanged(view: WebView?, newProgress: Int) {
                                         progress = newProgress
+                                    }
+
+                                    override fun onShowFileChooser(
+                                        webView: WebView?,
+                                        callback: ValueCallback<Array<Uri>>?,
+                                        params: FileChooserParams?,
+                                    ): Boolean {
+                                        filePathCallback?.onReceiveValue(null)
+                                        filePathCallback = callback
+                                        return try {
+                                            fileChooser.launch("*/*")
+                                            true
+                                        } catch (e: Exception) {
+                                            filePathCallback = null
+                                            false
+                                        }
                                     }
                                 }
                                 webViewClient = object : WebViewClient() {
