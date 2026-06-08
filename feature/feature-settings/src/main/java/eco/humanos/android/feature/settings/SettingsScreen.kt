@@ -1,8 +1,13 @@
 package eco.humanos.android.feature.settings
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountCircle
@@ -15,13 +20,17 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import eco.humanos.android.core.model.auth.AuthState
 
 /**
  * Settings feature screen -- account, privacy, integrations,
@@ -33,6 +42,7 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     val humanosLabel = if (uiState.isCheckingConnections) {
         "verificando..."
@@ -63,12 +73,12 @@ fun SettingsScreen(
             )
         }
         item {
-            ListItem(
-                headlineContent = { Text("Cuenta") },
-                supportingContent = { Text("No conectado") },
-                leadingContent = {
-                    Icon(Icons.Outlined.AccountCircle, contentDescription = null)
-                },
+            AccountListItem(
+                authState = uiState.authState,
+                isSigningIn = uiState.isSigningIn,
+                authError = uiState.authError,
+                onSignIn = { viewModel.signIn(context.findActivity()) },
+                onSignOut = { viewModel.signOut() },
             )
         }
         item {
@@ -117,4 +127,90 @@ fun SettingsScreen(
             )
         }
     }
+}
+
+/**
+ * "Cuenta" row. Renders the Google Sign-In button when unauthenticated, or the
+ * signed-in identity plus a sign-out action when authenticated.
+ */
+@Composable
+private fun AccountListItem(
+    authState: AuthState,
+    isSigningIn: Boolean,
+    authError: String?,
+    onSignIn: () -> Unit,
+    onSignOut: () -> Unit,
+) {
+    when (authState) {
+        is AuthState.Authenticated -> {
+            val primary = authState.displayName?.takeIf { it.isNotBlank() }
+                ?: authState.email
+                ?: "Sesion iniciada"
+            ListItem(
+                headlineContent = { Text("Cuenta") },
+                supportingContent = {
+                    Column {
+                        Text(primary)
+                        if (authState.email != null && authState.email != primary) {
+                            Text(
+                                text = authState.email!!,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                        TextButton(onClick = onSignOut) {
+                            Text("Cerrar sesion")
+                        }
+                    }
+                },
+                leadingContent = {
+                    Icon(Icons.Outlined.AccountCircle, contentDescription = null)
+                },
+            )
+        }
+
+        else -> {
+            // Unauthenticated, Loading, or TokenExpired all show the sign-in CTA.
+            ListItem(
+                headlineContent = { Text("Cuenta") },
+                supportingContent = {
+                    Column {
+                        Text("No conectado")
+                        OutlinedButton(
+                            onClick = onSignIn,
+                            enabled = !isSigningIn,
+                        ) {
+                            if (isSigningIn) {
+                                CircularProgressIndicator(modifier = Modifier.size(18.dp))
+                            } else {
+                                Text("Iniciar sesion con Google")
+                            }
+                        }
+                        if (authError != null) {
+                            Text(
+                                text = authError,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                    }
+                },
+                leadingContent = {
+                    Icon(Icons.Outlined.AccountCircle, contentDescription = null)
+                },
+            )
+        }
+    }
+}
+
+/**
+ * The Credential Manager needs an Activity context. Compose's [LocalContext] can
+ * be a ContextWrapper (e.g. the themed context), so unwrap to the host Activity.
+ */
+private fun Context.findActivity(): Activity {
+    var ctx = this
+    while (ctx is ContextWrapper) {
+        if (ctx is Activity) return ctx
+        ctx = ctx.baseContext
+    }
+    error("SettingsScreen must be hosted in an Activity to start Google Sign-In.")
 }

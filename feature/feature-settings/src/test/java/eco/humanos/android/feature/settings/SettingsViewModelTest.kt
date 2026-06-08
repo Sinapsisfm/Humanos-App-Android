@@ -1,9 +1,13 @@
 package eco.humanos.android.feature.settings
 
+import android.content.Context
 import com.google.common.truth.Truth.assertThat
+import eco.humanos.android.core.model.auth.AuthState
 import eco.humanos.android.core.model.auth.HumanOSSession
 import eco.humanos.android.core.model.task.TaskItem
 import eco.humanos.android.core.model.task.TaskPriority
+import eco.humanos.android.data.auth.AuthRepository
+import eco.humanos.android.data.auth.GoogleCredentialManager
 import eco.humanos.android.integrations.humanos.DailyReviewDto
 import eco.humanos.android.integrations.humanos.HumanosGateway
 import eco.humanos.android.integrations.quebot.QuebotGateway
@@ -12,6 +16,7 @@ import eco.humanos.android.integrations.quebot.SseEvent
 import eco.humanos.android.testing.MainDispatcherRule
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -60,6 +65,31 @@ class SettingsViewModelTest {
         override suspend fun checkStatus(): Result<ServiceStatus> = statusResult
     }
 
+    /** Minimal [AuthRepository] that emits a fixed auth state and no-ops elsewhere. */
+    private class FakeAuthRepository(
+        private val state: AuthState = AuthState.Unauthenticated,
+    ) : AuthRepository {
+        override fun observeAuthState(): Flow<AuthState> = flowOf(state)
+
+        override suspend fun signInWithGoogle(idToken: String): Result<AuthState.Authenticated> =
+            error("not used in these tests")
+
+        override suspend fun refreshHumanosToken(): Result<HumanOSSession> =
+            error("not used in these tests")
+
+        override suspend fun signOut() = Unit
+
+        override suspend fun getFirebaseToken(): String? = null
+
+        override suspend fun getHumanosToken(): String? = null
+    }
+
+    /** Minimal [GoogleCredentialManager]; the sign-in path is not exercised here. */
+    private class FakeGoogleCredentialManager : GoogleCredentialManager {
+        override suspend fun getGoogleIdToken(activityContext: Context): Result<String> =
+            error("not used in these tests")
+    }
+
     // ── Tests ────────────────────────────────────────────────────────────────
 
     @Test
@@ -69,6 +99,8 @@ class SettingsViewModelTest {
             quebotGateway = FakeQuebotGateway(
                 Result.success(ServiceStatus(healthy = true, version = "2.1.0")),
             ),
+            authRepository = FakeAuthRepository(),
+            googleCredentialManager = FakeGoogleCredentialManager(),
         )
 
         val state = viewModel.uiState.value
@@ -84,6 +116,8 @@ class SettingsViewModelTest {
             quebotGateway = FakeQuebotGateway(
                 Result.success(ServiceStatus(healthy = false, version = null)),
             ),
+            authRepository = FakeAuthRepository(),
+            googleCredentialManager = FakeGoogleCredentialManager(),
         )
 
         val state = viewModel.uiState.value
@@ -99,6 +133,8 @@ class SettingsViewModelTest {
             quebotGateway = FakeQuebotGateway(
                 Result.failure(IllegalStateException("quebot down")),
             ),
+            authRepository = FakeAuthRepository(),
+            googleCredentialManager = FakeGoogleCredentialManager(),
         )
 
         val state = viewModel.uiState.value

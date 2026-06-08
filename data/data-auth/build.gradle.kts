@@ -14,4 +14,15 @@ dependencies {
     implementation(project(":core:core-security"))
 
     implementation(libs.kotlinx.coroutines.android)
+    // Bridges Firebase/Play Services Task<T> to suspend via Task.await()
+    implementation(libs.kotlinx.coroutines.play.services)
+
+    // Firebase Auth (BOM manages the version)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+
+    // Credential Manager + Google ID for the modern Google Sign-In flow
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services)
+    implementation(libs.googleid)
 }
