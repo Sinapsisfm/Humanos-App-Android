@@ -103,8 +103,11 @@ fun WebViewScreen(
             TopAppBar(
                 title = { Text(state.title.ifBlank { "HumanOS" }, maxLines = 1) },
                 navigationIcon = {
-                    IconButton(onClick = { if (canGoBack) webView?.goBack() else onBack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+                    // One tap returns to the app's native tabs (the bottom bar
+                    // reappears). WebView history is still walkable via the device
+                    // back button. Fixes "had to press back many times".
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver a la app")
                     }
                 },
                 actions = {

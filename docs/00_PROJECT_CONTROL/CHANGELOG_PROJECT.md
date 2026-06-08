@@ -269,3 +269,12 @@
   reusa ConversationMessage (sin migración). Página /mobile-chat (chat UI) abierta
   en el WebView como módulo "Claude". El agente corre un loop que lee y responde.
 - Felipe escribe desde la app → yo leo/respondo sin que vaya al PC.
+
+## 2026-06-08 — v0.4.6 (nav fix) + TASK-028 (imágenes en el canal)
+
+- Canal Felipe↔Claude VERIFICADO end-to-end (Felipe escribió desde la app, respondí).
+- TASK-028: carga de imágenes en /mobile-chat (resize+compress → metadata.imageDataUrl,
+  cap ~3MB; render inline). Felipe puede mandarme capturas desde la app.
+- Nav fix (v0.4.6): el botón ← del WebView vuelve directo a la app (la barra inferior
+  reaparece) en vez de exigir muchos "atrás". El back del dispositivo sigue navegando
+  el historial del WebView. TASK-029.
