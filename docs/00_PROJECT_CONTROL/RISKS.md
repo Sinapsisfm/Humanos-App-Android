@@ -196,3 +196,21 @@ server-side) y en un POST HTTPS; 6 tests de seguridad (`bridge-session.test.ts`)
 la rotacion del secreto reinicia ambos servicios Railway.
 
 | RISK-010 | Session bridge emite sesion web desde bridge JWT | Baja | Alto | Medio | 2 |
+
+## RISK-011 — CSP relajado para el WebView de la app nativa (2026-06-08)
+
+**Probabilidad:** Baja · **Impacto:** Medio · **Severidad:** Bajo · **Phase:** 2 · **Ref:** ADR-0006, TASK-023
+
+El WebView embebido recibe un CSP sin `nonce`/`strict-dynamic` (UA contiene
+`humanOSApp`) → aplica `'unsafe-inline'`, lo que reduce la protección XSS DENTRO
+del WebView. Necesario porque la policy estricta bloqueaba los scripts inline de
+hidratación de Next (contenido en blanco).
+
+**Mitigaciones:** (1) acotado SOLO a requests con UA `humanOSApp` (el WebView de
+la app); desktop/web mantienen el CSP estricto. (2) host whitelist en el WebView
+(`shouldOverrideUrlLoading`): solo navega humanos.eco/empresa.eco; links externos
+abren en el navegador del sistema → el contexto relajado es first-party. (3) el
+WebView solo carga nuestro propio sitio (confianza first-party). Revisar con GPT
+si conviene una policy intermedia (hashes) en vez de unsafe-inline.
+
+| RISK-011 | CSP relajado en WebView app | Baja | Medio | Bajo | 2 |

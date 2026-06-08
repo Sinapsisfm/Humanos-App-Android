@@ -1,6 +1,7 @@
 package eco.humanos.android.feature.web
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.graphics.Bitmap
 import android.webkit.ConsoleMessage
 import android.webkit.CookieManager
@@ -23,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -45,6 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -68,6 +71,7 @@ fun WebViewScreen(
     viewModel: WebViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     LaunchedEffect(moduleKey) { viewModel.load(moduleKey) }
 
     var webView by remember { mutableStateOf<WebView?>(null) }
@@ -95,6 +99,27 @@ fun WebViewScreen(
                     if (jsErrors.isNotEmpty()) {
                         TextButton(onClick = { showErrors = !showErrors }) {
                             Text("⚠ ${jsErrors.size}")
+                        }
+                        IconButton(onClick = {
+                            val report = buildString {
+                                append("humanOS WebView — ${state.title}\n")
+                                append(state.url?.substringBefore("#token=") ?: "")
+                                append("\n\nErrores (${jsErrors.size}):\n")
+                                append(jsErrors.joinToString("\n"))
+                            }
+                            val send = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_SUBJECT, "humanOS — errores WebView")
+                                putExtra(Intent.EXTRA_TEXT, report)
+                            }
+                            runCatching {
+                                context.startActivity(
+                                    Intent.createChooser(send, "Compartir errores")
+                                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                                )
+                            }
+                        }) {
+                            Icon(Icons.Filled.Share, contentDescription = "Compartir errores")
                         }
                     }
                     IconButton(onClick = { webView?.reload() }) {
@@ -151,6 +176,10 @@ fun WebViewScreen(
                                     mediaPlaybackRequiresUserGesture = false
                                     mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
                                     cacheMode = WebSettings.LOAD_DEFAULT
+                                    // Mark the WebView so the server relaxes its
+                                    // strict CSP here (Next inline scripts) — see
+                                    // middleware buildCsp(relaxInline) / ADR-0006.
+                                    userAgentString = "$userAgentString humanOSApp"
                                 }
                                 webChromeClient = object : WebChromeClient() {
                                     override fun onConsoleMessage(message: ConsoleMessage): Boolean {
@@ -167,6 +196,27 @@ fun WebViewScreen(
                                     }
                                 }
                                 webViewClient = object : WebViewClient() {
+                                    // Keep the WebView first-party (humanos.eco /
+                                    // empresa.eco). External links open in the
+                                    // system browser — bounds the relaxed CSP to
+                                    // our own site (RISK-011 mitigation).
+                                    override fun shouldOverrideUrlLoading(
+                                        view: WebView?,
+                                        request: WebResourceRequest?,
+                                    ): Boolean {
+                                        val host = request?.url?.host ?: return false
+                                        val firstParty = host.endsWith("humanos.eco") ||
+                                            host.endsWith("empresa.eco")
+                                        if (firstParty) return false
+                                        runCatching {
+                                            view?.context?.startActivity(
+                                                Intent(Intent.ACTION_VIEW, request.url)
+                                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                                            )
+                                        }
+                                        return true
+                                    }
+
                                     override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                                         jsErrors.clear()
                                     }

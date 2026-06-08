@@ -226,3 +226,15 @@
 - Hallazgo Felipe: el shell autenticado carga (FABs QueBot, tour, nav) pero el
   CONTENIDO `<main>` no → hipótesis: hidratación React falla en el WebView.
   Diagnóstico via el chip ⚠ en la próxima prueba. TASK-023.
+
+## 2026-06-08 — v0.4.2 (contenido WebView renderiza)
+
+- **Causa raíz del contenido en blanco:** CSP `strict-dynamic`+nonce bloqueaba
+  los scripts inline de hidratación de Next dentro del WebView (error capturado
+  por Felipe: `/dashboard:1 Executing inline script violates ... script-src`).
+- **Fix:** middleware `buildCsp(relaxInline)` — si el UA es `humanOSApp` (solo el
+  WebView de la app), sirve CSP sin nonce/strict-dynamic → los scripts corren.
+  Desktop/web sin cambios. RISK-011. (humanos-eco commit f259e28)
+- App: WebView marca UA `humanOSApp` + host whitelist (solo humanos.eco/empresa.eco;
+  externos al navegador) + botón "Compartir errores" (ACTION_SEND) para mandar el
+  log de errores directo desde la app (pedido de Felipe: debug sin PC).
