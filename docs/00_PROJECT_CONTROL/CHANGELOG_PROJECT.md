@@ -278,3 +278,14 @@
 - Nav fix (v0.4.6): el botón ← del WebView vuelve directo a la app (la barra inferior
   reaparece) en vez de exigir muchos "atrás". El back del dispositivo sigue navegando
   el historial del WebView. TASK-029.
+
+## 2026-06-08 — v0.4.7 (teclado + mic nativo) + canal founder-only/voz/imágenes
+
+- Teclado: MainActivity windowSoftInputMode=adjustResize (el input ya no queda
+  tapado al abrir el teclado). TASK-031.
+- Mic: webkitSpeechRecognition no anda en WebView → mic NATIVO en la barra del
+  chat (RecognizerIntent es-CL) que inyecta el transcript en el textarea (value
+  setter React-compatible + input event). Quitado el 🎤 de la página. TASK-030.
+- Canal: founder-only (resolveFounder + allowlist), imágenes (TASK-028), 2 vías.
+- PENDIENTE: logo de la app (no encontré el PNG en humanos-eco/public; Felipe lo
+  manda o lo busco en sesión enfocada). TASK-032.

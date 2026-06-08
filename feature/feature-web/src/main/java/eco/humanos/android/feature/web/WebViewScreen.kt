@@ -1,11 +1,13 @@
 package eco.humanos.android.feature.web
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.speech.RecognizerIntent
 import android.widget.Toast
 import android.webkit.ConsoleMessage
 import android.webkit.CookieManager
@@ -16,6 +18,8 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +32,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
@@ -57,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.json.JSONObject
 
 /**
  * Embedded HumanOS web module in a [WebView], authenticated via the session
@@ -85,6 +91,27 @@ fun WebViewScreen(
     var domProbe by remember { mutableStateOf("(sondeo pendiente)") }
     var showPanel by remember { mutableStateOf(false) }
 
+    // Native dictation for the chat — webkitSpeechRecognition doesn't work in the
+    // WebView, so use the system recognizer and inject the transcript into the
+    // page's textarea via a React-compatible value setter + input event.
+    val voiceLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val text = result.data
+                ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+                ?.firstOrNull()
+                .orEmpty()
+            if (text.isNotBlank()) {
+                val js = "(function(){var el=document.querySelector('textarea');if(!el)return;" +
+                    "var d=Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,'value');" +
+                    "d.set.call(el,(el.value?el.value+' ':'')+" + JSONObject.quote(text) + ");" +
+                    "el.dispatchEvent(new Event('input',{bubbles:true}));el.focus();})();"
+                webView?.evaluateJavascript(js, null)
+            }
+        }
+    }
+
     BackHandler(enabled = true) {
         val wv = webView
         if (canGoBack && wv != null) wv.goBack() else onBack()
@@ -111,6 +138,21 @@ fun WebViewScreen(
                     }
                 },
                 actions = {
+                    if (moduleKey == "chat") {
+                        IconButton(onClick = {
+                            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                putExtra(
+                                    RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                                    RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
+                                )
+                                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "es-CL")
+                                putExtra(RecognizerIntent.EXTRA_PROMPT, "Dictá tu mensaje…")
+                            }
+                            runCatching { voiceLauncher.launch(intent) }
+                        }) {
+                            Icon(Icons.Filled.Mic, contentDescription = "Dictar")
+                        }
+                    }
                     // Always available — even when the page renders blank with no errors.
                     IconButton(onClick = { showPanel = !showPanel }) {
                         Icon(Icons.Filled.BugReport, contentDescription = "Diagnóstico")
