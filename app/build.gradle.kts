@@ -19,10 +19,32 @@ android {
     defaultConfig {
         // Definitive applicationId confirmed by Felipe 2026-06-07 (Q-003 resolved)
         applicationId = "eco.humanos.android"
-        versionCode = 3
-        versionName = "0.2.1"
+        versionCode = 4
+        versionName = "0.3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        // Sign debug builds with Felipe's Firebase-registered debug keystore
+        // (SHA-1 A6:04:1D:CF:…) so Google Sign-In works and each APK installs
+        // in place over the previous one (same cert → no "package conflict").
+        //
+        // CI sets DEBUG_KEYSTORE_PATH to the decoded keystore; locally the var is
+        // unset, so Gradle keeps using ~/.android/debug.keystore (already the
+        // same cert on Felipe's machine). This replaces the brittle
+        // "overwrite ~/.android/debug.keystore" CI step that the runner ignored.
+        getByName("debug") {
+            System.getenv("DEBUG_KEYSTORE_PATH")?.let { path ->
+                val ks = file(path)
+                if (ks.exists()) {
+                    storeFile = ks
+                    storePassword = System.getenv("DEBUG_KEYSTORE_PASSWORD") ?: "android"
+                    keyAlias = System.getenv("DEBUG_KEY_ALIAS") ?: "androiddebugkey"
+                    keyPassword = System.getenv("DEBUG_KEY_PASSWORD") ?: "android"
+                }
+            }
+        }
     }
 }
 

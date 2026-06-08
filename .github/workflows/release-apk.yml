@@ -55,9 +55,14 @@ jobs:
       - name: Use the registered debug keystore
         if: ${{ env.DEBUG_KEYSTORE_B64 != '' }}
         run: |
-          mkdir -p "$HOME/.android"
-          echo "$DEBUG_KEYSTORE_B64" | base64 --decode > "$HOME/.android/debug.keystore"
-          echo "Restored the registered debug keystore ($(wc -c < "$HOME/.android/debug.keystore") bytes)."
+          # Decode to a known path and point the Gradle debug signingConfig at it
+          # via DEBUG_KEYSTORE_PATH (app/build.gradle.kts reads this env var).
+          # The previous approach overwrote ~/.android/debug.keystore, which AGP
+          # on the runner ignored/regenerated → wrong SHA-1 (f4abd24c…).
+          KS="$RUNNER_TEMP/humanos-debug.keystore"
+          echo "$DEBUG_KEYSTORE_B64" | base64 --decode > "$KS"
+          echo "DEBUG_KEYSTORE_PATH=$KS" >> "$GITHUB_ENV"
+          echo "Decoded registered debug keystore ($(wc -c < "$KS") bytes) -> $KS"
 
       - name: Warn if debug keystore secret is missing
         if: ${{ env.DEBUG_KEYSTORE_B64 == '' }}

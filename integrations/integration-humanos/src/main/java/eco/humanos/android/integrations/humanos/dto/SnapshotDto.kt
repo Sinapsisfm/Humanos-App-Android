@@ -4,71 +4,61 @@ import eco.humanos.android.integrations.humanos.DailyReviewDto
 import kotlinx.serialization.Serializable
 
 /**
- * Response of `GET /api/memory/snapshot/today` — the daily context summary.
+ * Response of `GET /api/mobile/snapshot` — the aggregated "today" view for the
+ * dashboard. Shape:
  *
- * Aggregates the user's open tasks, pending bills, active alerts and recent
- * decisions into a single payload the app renders on the dashboard / daily
- * review screen.
- *
- * @property date ISO date (yyyy-MM-dd) the snapshot is for.
- * @property summary Natural-language summary of the day.
- * @property openTasks Count of currently open tasks.
- * @property bills Outstanding bills / payment reminders.
- * @property alerts Active alerts requiring attention.
- * @property decisions Recent or pending decisions surfaced by HumanOS.
+ * ```
+ * { "snapshot": {
+ *     "generatedAt": "<iso>",
+ *     "user":   { "firstName", "loadScore", "lifeAdminScore" },
+ *     "counts": { "tasksOpen", "tasksOverdue", "tasksDueToday" },
+ *     "checkInToday": CheckIn | null,
+ *     "tasks": RemoteTask[]   // open tasks, soonest due first
+ * } }
+ * ```
  */
 @Serializable
-data class DailySnapshotDto(
-    val date: String,
-    val summary: String = "",
-    val openTasks: Int = 0,
-    val bills: List<SnapshotItemDto> = emptyList(),
-    val alerts: List<SnapshotItemDto> = emptyList(),
-    val decisions: List<SnapshotItemDto> = emptyList(),
+data class SnapshotEnvelope(val snapshot: MobileSnapshotDto)
+
+@Serializable
+data class MobileSnapshotDto(
+    val generatedAt: String? = null,
+    val user: SnapshotUserDto = SnapshotUserDto(),
+    val counts: SnapshotCountsDto = SnapshotCountsDto(),
+    val checkInToday: CheckInDto? = null,
+    val tasks: List<RemoteTaskDto> = emptyList(),
+)
+
+@Serializable
+data class SnapshotUserDto(
+    val firstName: String? = null,
+    val loadScore: Int = 0,
+    val lifeAdminScore: Int = 0,
+)
+
+@Serializable
+data class SnapshotCountsDto(
+    val tasksOpen: Int = 0,
+    val tasksOverdue: Int = 0,
+    val tasksDueToday: Int = 0,
 )
 
 /**
- * A single line item inside a [DailySnapshotDto] section.
- *
- * @property label Short human-readable label.
- * @property detail Optional longer description.
- * @property dueDate Optional epoch millis due date (for bills / time-bound items).
+ * Adapt the mobile snapshot to the legacy [DailyReviewDto] the gateway still
+ * exposes via `fetchDailyReview()`, so existing callers keep working.
  */
-@Serializable
-data class SnapshotItemDto(
-    val label: String,
-    val detail: String? = null,
-    val dueDate: Long? = null,
+fun MobileSnapshotDto.toDailyReview(): DailyReviewDto = DailyReviewDto(
+    date = generatedAt?.substringBefore("T") ?: "",
+    summary = buildString {
+        val name = user.firstName?.takeIf { it.isNotBlank() }
+        if (name != null) append("Hola $name. ")
+        append("${counts.tasksOpen} tareas abiertas")
+        if (counts.tasksOverdue > 0) append(", ${counts.tasksOverdue} atrasadas")
+        if (counts.tasksDueToday > 0) append(", ${counts.tasksDueToday} para hoy")
+        append(".")
+    },
+    pendingTaskCount = counts.tasksOpen,
+    urgentItems = tasks
+        .filter { it.priority.equals("urgent", ignoreCase = true) || it.priority.equals("high", ignoreCase = true) }
+        .map { it.title },
 )
-
-/**
- * Request body for `POST /api/context/snapshot` — push a client-side context
- * snapshot up to HumanOS (e.g. local signals to enrich the daily summary).
- */
-@Serializable
-data class CreateSnapshotDto(
-    val date: String,
-    val note: String? = null,
-    val signals: Map<String, String> = emptyMap(),
-)
-
-/**
- * Adapt the server snapshot to the [DailyReviewDto] the [HumanosGateway]
- * exposes today, so existing callers keep working unchanged when the real
- * gateway is switched on.
- *
- * "Urgent items" are derived from the alerts plus any bills, surfacing the
- * most time-sensitive lines first.
- */
-fun DailySnapshotDto.toDailyReview(): DailyReviewDto {
-    val urgent = buildList {
-        alerts.forEach { add(it.label) }
-        bills.forEach { add(it.label) }
-    }
-    return DailyReviewDto(
-        date = date,
-        summary = summary,
-        pendingTaskCount = openTasks,
-        urgentItems = urgent,
-    )
-}

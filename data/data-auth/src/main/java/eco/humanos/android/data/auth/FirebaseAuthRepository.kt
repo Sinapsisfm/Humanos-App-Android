@@ -4,12 +4,17 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import eco.humanos.android.core.model.auth.AuthState
+import eco.humanos.android.core.model.auth.HumanosLinkState
 import eco.humanos.android.core.model.common.IntegrationConfig
 import eco.humanos.android.core.security.vault.HumanOSSessionStore
 import eco.humanos.android.integrations.humanos.HumanosApiService
+import eco.humanos.android.integrations.humanos.toHumanosErrorMessage
 import eco.humanos.android.integrations.humanos.dto.toHumanOSSession
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -54,6 +59,9 @@ class FirebaseAuthRepository @Inject constructor(
 ) : AuthRepository {
 
     private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
+
+    private val _humanosLinkState = MutableStateFlow<HumanosLinkState>(HumanosLinkState.Unknown)
+    override val humanosLinkState: StateFlow<HumanosLinkState> = _humanosLinkState.asStateFlow()
 
     /**
      * Emits the live authentication state, backed by a Firebase
@@ -120,6 +128,10 @@ class FirebaseAuthRepository @Inject constructor(
             val apiSession = performExchange(firebaseToken)
             sessionStore.save(apiSession.toVaultSession(user))
             apiSession
+        }.onSuccess {
+            _humanosLinkState.value = HumanosLinkState.Linked
+        }.onFailure {
+            _humanosLinkState.value = HumanosLinkState.Failed(it.toHumanosErrorMessage())
         }
     }
 
@@ -128,6 +140,7 @@ class FirebaseAuthRepository @Inject constructor(
         // session, so no token survives sign-out.
         sessionStore.clear()
         firebaseAuth.signOut()
+        _humanosLinkState.value = HumanosLinkState.Unknown
     }
 
     override suspend fun getFirebaseToken(): String? =
@@ -164,9 +177,13 @@ class FirebaseAuthRepository @Inject constructor(
         return try {
             val vaultSession = performExchange(firebaseToken).toVaultSession(user)
             sessionStore.save(vaultSession)
+            _humanosLinkState.value = HumanosLinkState.Linked
             vaultSession
         } catch (e: Exception) {
-            // Bridge unreachable / not provisioned / etc. Degrade to mock state.
+            // Bridge unreachable / not provisioned / etc. Sign-in still succeeds,
+            // but record WHY the exchange failed so the UI can show it instead of
+            // a silent downstream "no bridge token".
+            _humanosLinkState.value = HumanosLinkState.Failed(e.toHumanosErrorMessage())
             null
         }
     }

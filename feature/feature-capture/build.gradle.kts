@@ -9,6 +9,7 @@ android {
 dependencies {
     implementation(project(":data:data-capture"))
 
+    implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material.icons.extended)
 
     testImplementation(project(":testing:testing-common"))

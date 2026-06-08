@@ -7,6 +7,12 @@ import eco.humanos.android.core.model.task.EntityOrigin
 import eco.humanos.android.core.model.task.TaskItem
 import eco.humanos.android.core.model.task.TaskPriority
 import eco.humanos.android.core.model.task.TaskStatus
+import eco.humanos.android.integrations.humanos.dto.CheckInDto
+import eco.humanos.android.integrations.humanos.dto.CheckInsEnvelope
+import eco.humanos.android.integrations.humanos.dto.MobileSnapshotDto
+import eco.humanos.android.integrations.humanos.dto.PersonDto
+import eco.humanos.android.integrations.humanos.dto.SnapshotCountsDto
+import eco.humanos.android.integrations.humanos.dto.SnapshotUserDto
 import kotlinx.coroutines.delay
 import javax.inject.Inject
 
@@ -125,6 +131,72 @@ class FakeHumanosGateway @Inject constructor() : HumanosGateway {
                     "Presentacion directorio (vence 10 jun)",
                     "Contrato arriendo Talca (vence 30 jun)",
                 ),
+            ),
+        )
+    }
+
+    override suspend fun updateTaskStatus(taskId: String, status: String): Result<TaskItem> {
+        delay(SIMULATED_LATENCY_MS)
+        val base = sampleTasks.firstOrNull { it.id == taskId || it.remoteId == taskId }
+            ?: sampleTasks.first()
+        val newStatus = TaskStatus.entries.firstOrNull { it.name.equals(status, ignoreCase = true) }
+            ?: base.status
+        return Result.success(base.copy(status = newStatus, updatedAt = System.currentTimeMillis()))
+    }
+
+    override suspend fun fetchSnapshot(): Result<MobileSnapshotDto> {
+        delay(SIMULATED_LATENCY_MS)
+        return Result.success(
+            MobileSnapshotDto(
+                generatedAt = "2026-06-08T08:00:00.000Z",
+                user = SnapshotUserDto(firstName = "Felipe", loadScore = 62, lifeAdminScore = 48),
+                counts = SnapshotCountsDto(
+                    tasksOpen = sampleTasks.size,
+                    tasksOverdue = 1,
+                    tasksDueToday = 1,
+                ),
+                checkInToday = null,
+                tasks = emptyList(),
+            ),
+        )
+    }
+
+    override suspend fun fetchCheckIns(): Result<CheckInsEnvelope> {
+        delay(SIMULATED_LATENCY_MS)
+        return Result.success(CheckInsEnvelope(checkIns = emptyList(), today = null))
+    }
+
+    override suspend fun submitCheckIn(
+        energy: Int,
+        mood: Int,
+        stress: Int,
+        perceivedLoad: Int?,
+        note: String?,
+    ): Result<CheckInDto> {
+        delay(SIMULATED_LATENCY_MS)
+        return Result.success(
+            CheckInDto(
+                id = "checkin-${System.currentTimeMillis()}",
+                energy = energy,
+                mood = mood,
+                stress = stress,
+                perceivedLoad = perceivedLoad ?: 3,
+                note = note,
+                source = "api",
+            ),
+        )
+    }
+
+    override suspend fun fetchPerson(): Result<PersonDto> {
+        delay(SIMULATED_LATENCY_MS)
+        return Result.success(
+            PersonDto(
+                id = "person-001",
+                firstName = "Felipe",
+                lastName = "Mehr",
+                email = "felipe@sinapsis.in",
+                loadScore = 62,
+                lifeAdminScore = 48,
             ),
         )
     }

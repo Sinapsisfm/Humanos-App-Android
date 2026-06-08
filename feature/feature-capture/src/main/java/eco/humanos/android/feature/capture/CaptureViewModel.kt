@@ -39,6 +39,19 @@ class CaptureViewModel @Inject constructor(
         _uiState.update { it.copy(textInput = text, savedMessage = null) }
     }
 
+    /**
+     * Append [fragment] to the current text (used by the voice/photo/file
+     * shortcuts), inserting a separating space/newline when there's already text.
+     */
+    fun appendText(fragment: String) {
+        if (fragment.isBlank()) return
+        _uiState.update {
+            val current = it.textInput
+            val joined = if (current.isBlank()) fragment else "$current\n$fragment"
+            it.copy(textInput = joined, savedMessage = null)
+        }
+    }
+
     fun saveCapture() {
         val text = _uiState.value.textInput
         if (text.isBlank()) return

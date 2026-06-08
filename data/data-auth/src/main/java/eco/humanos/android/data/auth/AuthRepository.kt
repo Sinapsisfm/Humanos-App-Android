@@ -2,7 +2,9 @@ package eco.humanos.android.data.auth
 
 import eco.humanos.android.core.model.auth.AuthState
 import eco.humanos.android.core.model.auth.HumanOSSession
+import eco.humanos.android.core.model.auth.HumanosLinkState
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Manages authentication state, token lifecycle, and session persistence.
@@ -16,6 +18,13 @@ interface AuthRepository {
 
     /** Observe the current authentication state as a cold flow. */
     fun observeAuthState(): Flow<AuthState>
+
+    /**
+     * Live state of the Firebase → HumanOS bridge exchange. Surfaces a failed
+     * exchange (which no longer fails sign-in) so the UI can show the cause
+     * instead of a silent "no bridge token" downstream.
+     */
+    val humanosLinkState: StateFlow<HumanosLinkState>
 
     /** Exchange a Google ID token for a Firebase session and return the authenticated state. */
     suspend fun signInWithGoogle(idToken: String): Result<AuthState.Authenticated>

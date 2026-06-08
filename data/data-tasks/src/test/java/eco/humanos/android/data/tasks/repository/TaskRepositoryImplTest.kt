@@ -14,6 +14,10 @@ import eco.humanos.android.core.model.task.TaskStatus
 import eco.humanos.android.core.observability.TraceRepository
 import eco.humanos.android.integrations.humanos.DailyReviewDto
 import eco.humanos.android.integrations.humanos.HumanosGateway
+import eco.humanos.android.integrations.humanos.dto.CheckInDto
+import eco.humanos.android.integrations.humanos.dto.CheckInsEnvelope
+import eco.humanos.android.integrations.humanos.dto.MobileSnapshotDto
+import eco.humanos.android.integrations.humanos.dto.PersonDto
 import eco.humanos.android.core.model.auth.HumanOSSession
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -71,6 +75,26 @@ class TaskRepositoryImplTest {
         ): Result<TaskItem> = error("not used in these tests")
 
         override suspend fun fetchDailyReview(): Result<DailyReviewDto> =
+            error("not used in these tests")
+
+        override suspend fun updateTaskStatus(taskId: String, status: String): Result<TaskItem> =
+            error("not used in these tests")
+
+        override suspend fun fetchSnapshot(): Result<MobileSnapshotDto> =
+            error("not used in these tests")
+
+        override suspend fun fetchCheckIns(): Result<CheckInsEnvelope> =
+            error("not used in these tests")
+
+        override suspend fun submitCheckIn(
+            energy: Int,
+            mood: Int,
+            stress: Int,
+            perceivedLoad: Int?,
+            note: String?,
+        ): Result<CheckInDto> = error("not used in these tests")
+
+        override suspend fun fetchPerson(): Result<PersonDto> =
             error("not used in these tests")
 
         override suspend fun checkConnectivity(): Boolean = true

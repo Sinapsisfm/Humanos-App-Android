@@ -3,6 +3,12 @@ package eco.humanos.android.integrations.humanos
 import eco.humanos.android.core.model.auth.HumanOSSession
 import eco.humanos.android.core.model.task.TaskItem
 import eco.humanos.android.core.model.task.TaskPriority
+import eco.humanos.android.integrations.humanos.dto.CheckInDto
+import eco.humanos.android.integrations.humanos.dto.CheckInsEnvelope
+import eco.humanos.android.integrations.humanos.dto.CreateCheckInDto
+import eco.humanos.android.integrations.humanos.dto.MobileSnapshotDto
+import eco.humanos.android.integrations.humanos.dto.PersonDto
+import eco.humanos.android.integrations.humanos.dto.UpdateTaskDto
 import eco.humanos.android.integrations.humanos.dto.buildCreateTaskDto
 import eco.humanos.android.integrations.humanos.dto.toDailyReview
 import eco.humanos.android.integrations.humanos.dto.toDomain
@@ -10,15 +16,8 @@ import eco.humanos.android.integrations.humanos.dto.toHumanOSSession
 import javax.inject.Inject
 
 /**
- * Real [HumanosGateway] backed by [HumanosApiService] over Retrofit.
- *
- * ## Dormant by default
- * This class is wired into the Hilt graph but **not bound** to [HumanosGateway]
- * until the integration goes live — see the swap point documented in
- * `HumanosModule`. While
- * [eco.humanos.android.core.model.common.IntegrationConfig.USE_REAL_HUMANOS_AUTH]
- * is `false`, `FakeHumanosGateway` remains the bound implementation and this
- * code never runs.
+ * Real [HumanosGateway] backed by [HumanosApiService] over Retrofit, talking to
+ * the HumanOS `/api/mobile` routes.
  *
  * ## Auth model
  * [exchangeFirebaseToken] sends the **Firebase** ID token. Every other call
@@ -27,8 +26,8 @@ import javax.inject.Inject
  * network unauthenticated.
  *
  * All fallible calls are wrapped in [runCatching] so transport/HTTP errors
- * surface as `Result.failure` rather than thrown exceptions, matching the
- * [HumanosGateway] contract and [FakeHumanosGateway]'s behaviour.
+ * surface as `Result.failure` (carrying the underlying exception, including
+ * Retrofit `HttpException` with the status code) rather than thrown exceptions.
  */
 class RealHumanosGateway @Inject constructor(
     private val api: HumanosApiService,
@@ -37,13 +36,13 @@ class RealHumanosGateway @Inject constructor(
 
     override suspend fun exchangeFirebaseToken(firebaseIdToken: String): Result<HumanOSSession> =
         runCatching {
-            val response = api.exchangeToken(bearer(firebaseIdToken))
-            response.toHumanOSSession(nowMillis = System.currentTimeMillis())
+            api.exchangeToken(bearer(firebaseIdToken))
+                .toHumanOSSession(nowMillis = System.currentTimeMillis())
         }
 
     override suspend fun fetchTasks(status: String?): Result<List<TaskItem>> =
         runCatching {
-            api.getTasks(requireBridgeBearer(), status).map { it.toDomain() }
+            api.getTasks(requireBridgeBearer(), status).tasks.map { it.toDomain() }
         }
 
     override suspend fun createTask(
@@ -55,19 +54,60 @@ class RealHumanosGateway @Inject constructor(
             api.createTask(
                 requireBridgeBearer(),
                 buildCreateTaskDto(title, description, priority),
-            ).toDomain()
+            ).task.toDomain()
+        }
+
+    override suspend fun updateTaskStatus(taskId: String, status: String): Result<TaskItem> =
+        runCatching {
+            api.updateTask(requireBridgeBearer(), taskId, UpdateTaskDto(status = status))
+                .task.toDomain()
         }
 
     override suspend fun fetchDailyReview(): Result<DailyReviewDto> =
         runCatching {
-            api.getTodaySnapshot(requireBridgeBearer()).toDailyReview()
+            api.getSnapshot(requireBridgeBearer()).snapshot.toDailyReview()
+        }
+
+    override suspend fun fetchSnapshot(): Result<MobileSnapshotDto> =
+        runCatching {
+            api.getSnapshot(requireBridgeBearer()).snapshot
+        }
+
+    override suspend fun fetchCheckIns(): Result<CheckInsEnvelope> =
+        runCatching {
+            api.getCheckIns(requireBridgeBearer())
+        }
+
+    override suspend fun submitCheckIn(
+        energy: Int,
+        mood: Int,
+        stress: Int,
+        perceivedLoad: Int?,
+        note: String?,
+    ): Result<CheckInDto> =
+        runCatching {
+            api.createCheckIn(
+                requireBridgeBearer(),
+                CreateCheckInDto(
+                    energy = energy,
+                    mood = mood,
+                    stress = stress,
+                    perceivedLoad = perceivedLoad,
+                    note = note,
+                ),
+            ).checkIn
+        }
+
+    override suspend fun fetchPerson(): Result<PersonDto> =
+        runCatching {
+            api.getPerson(requireBridgeBearer()).person
         }
 
     override suspend fun checkConnectivity(): Boolean =
         runCatching {
-            // A snapshot fetch doubles as a lightweight authenticated ping.
+            // An authenticated profile fetch doubles as a lightweight ping.
             val token = tokenProvider.currentBridgeToken() ?: return false
-            api.getTodaySnapshot(bearer(token))
+            api.getPerson(bearer(token))
             true
         }.getOrDefault(false)
 
@@ -80,7 +120,7 @@ class RealHumanosGateway @Inject constructor(
      */
     private suspend fun requireBridgeBearer(): String {
         val token = tokenProvider.currentBridgeToken()
-            ?: error("No HumanOS bridge token available; sign in / exchange first.")
+            ?: error("No hay sesión HumanOS. Inicia sesión con Google para conectar.")
         return bearer(token)
     }
 }

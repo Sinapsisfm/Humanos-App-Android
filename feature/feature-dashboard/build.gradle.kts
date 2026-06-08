@@ -9,6 +9,9 @@ android {
 dependencies {
     implementation(project(":data:data-tasks"))
     implementation(project(":data:data-auth"))
+    implementation(project(":integrations:integration-humanos"))
+
+    implementation(libs.androidx.compose.material.icons.extended)
 
     testImplementation(project(":testing:testing-common"))
     testImplementation(libs.junit)

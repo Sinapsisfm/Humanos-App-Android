@@ -1,82 +1,87 @@
 package eco.humanos.android.integrations.humanos
 
-import eco.humanos.android.integrations.humanos.dto.CheckInDto
+import eco.humanos.android.integrations.humanos.dto.CheckInEnvelope
+import eco.humanos.android.integrations.humanos.dto.CheckInsEnvelope
 import eco.humanos.android.integrations.humanos.dto.CreateCheckInDto
-import eco.humanos.android.integrations.humanos.dto.CreateNoteDto
 import eco.humanos.android.integrations.humanos.dto.CreateTaskDto
-import eco.humanos.android.integrations.humanos.dto.DailySnapshotDto
 import eco.humanos.android.integrations.humanos.dto.MobileExchangeResponse
-import eco.humanos.android.integrations.humanos.dto.RemoteNoteDto
-import eco.humanos.android.integrations.humanos.dto.RemoteTaskDto
+import eco.humanos.android.integrations.humanos.dto.PersonEnvelope
+import eco.humanos.android.integrations.humanos.dto.SnapshotEnvelope
+import eco.humanos.android.integrations.humanos.dto.TaskEnvelope
+import eco.humanos.android.integrations.humanos.dto.TasksEnvelope
+import eco.humanos.android.integrations.humanos.dto.UpdateTaskDto
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
+import retrofit2.http.PATCH
 import retrofit2.http.POST
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 /**
- * Retrofit contract for the HumanOS REST API (base URL
- * [eco.humanos.android.core.model.common.IntegrationConfig.HUMANOS_BASE_URL]).
+ * Retrofit contract for the HumanOS mobile API (base URL
+ * [eco.humanos.android.core.model.common.IntegrationConfig.HUMANOS_BASE_URL],
+ * which ends in `/api/`).
  *
- * Endpoint paths are relative to that base (which ends in `/api/`), so e.g.
- * `@GET("tasks")` resolves to `https://www.humanos.eco/api/tasks`.
- *
- * The `Authorization` header is passed per-call rather than via an interceptor
- * because two different bearers are in play: the **Firebase ID token** for the
- * one-off [exchangeToken] call, and the **HumanOS bridge JWT** (returned by
- * that exchange) for every other endpoint. Callers must pass the full header
- * value including the `"Bearer "` prefix.
- *
- * Contract source: `docs/03_INTEGRATIONS/MOBILE_AUTH_ENDPOINT_SPEC.md`.
+ * All data endpoints live under `mobile/` and authenticate with the **bridge
+ * JWT** (minted by [exchangeToken]) — they are the Bearer-token analogues of
+ * the web's session-cookie routes (see humanos-eco `app/api/mobile`). The
+ * `Authorization` header is passed per-call: the **Firebase ID token** for the
+ * one-off [exchangeToken], the **bridge JWT** for everything else. Callers pass
+ * the full header value including `"Bearer "`.
  */
 interface HumanosApiService {
 
-    /**
-     * Exchange a Firebase ID token for a HumanOS bridge session.
-     *
-     * @param firebaseBearer `"Bearer <firebase-id-token>"`.
-     */
+    /** Exchange a Firebase ID token for a HumanOS bridge session. */
     @POST("auth/mobile/exchange")
     suspend fun exchangeToken(
         @Header("Authorization") firebaseBearer: String,
     ): MobileExchangeResponse
 
-    /**
-     * List tasks, optionally filtered by status.
-     *
-     * @param bridgeBearer `"Bearer <bridge-jwt>"`.
-     * @param status server status filter (e.g. "PENDING"), or null for all.
-     */
-    @GET("tasks")
+    /** List the signed-in person's tasks, optionally filtered by status. */
+    @GET("mobile/tasks")
     suspend fun getTasks(
         @Header("Authorization") bridgeBearer: String,
         @Query("status") status: String? = null,
-    ): List<RemoteTaskDto>
+    ): TasksEnvelope
 
-    /** Create a task and return the server-assigned entity. */
-    @POST("tasks")
+    /** Create a task; returns the server-assigned entity. */
+    @POST("mobile/tasks")
     suspend fun createTask(
         @Header("Authorization") bridgeBearer: String,
         @Body body: CreateTaskDto,
-    ): RemoteTaskDto
+    ): TaskEnvelope
 
-    /** Create a note / quick capture. */
-    @POST("notes")
-    suspend fun createNote(
+    /** Partially update a task (e.g. mark done); ownership enforced server-side. */
+    @PATCH("mobile/tasks/{id}")
+    suspend fun updateTask(
         @Header("Authorization") bridgeBearer: String,
-        @Body body: CreateNoteDto,
-    ): RemoteNoteDto
+        @Path("id") id: String,
+        @Body body: UpdateTaskDto,
+    ): TaskEnvelope
 
-    /** Fetch today's aggregated context snapshot (daily summary). */
-    @GET("memory/snapshot/today")
-    suspend fun getTodaySnapshot(
+    /** Aggregated "today" snapshot for the dashboard. */
+    @GET("mobile/snapshot")
+    suspend fun getSnapshot(
         @Header("Authorization") bridgeBearer: String,
-    ): DailySnapshotDto
+    ): SnapshotEnvelope
 
-    /** Record a wellbeing / health check-in. */
-    @POST("check-ins")
+    /** Recent check-ins + today's, for the wellbeing card. */
+    @GET("mobile/check-ins")
+    suspend fun getCheckIns(
+        @Header("Authorization") bridgeBearer: String,
+    ): CheckInsEnvelope
+
+    /** Record (upsert) today's mood / energy / stress check-in. */
+    @POST("mobile/check-ins")
     suspend fun createCheckIn(
         @Header("Authorization") bridgeBearer: String,
         @Body body: CreateCheckInDto,
-    ): CheckInDto
+    ): CheckInEnvelope
+
+    /** The signed-in user's profile. */
+    @GET("mobile/person")
+    suspend fun getPerson(
+        @Header("Authorization") bridgeBearer: String,
+    ): PersonEnvelope
 }

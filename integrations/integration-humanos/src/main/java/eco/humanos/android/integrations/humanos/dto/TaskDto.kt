@@ -9,53 +9,65 @@ import eco.humanos.android.core.model.task.TaskStatus
 import kotlinx.serialization.Serializable
 
 /**
- * Task as returned by `GET /api/tasks` and `POST /api/tasks`.
+ * Task as returned by `GET/POST /api/mobile/tasks`. Field names + value casing
+ * mirror the HumanOS `PersonalTask` contract:
+ *  - `status`   ∈ pending | in_progress | done | cancelled
+ *  - `priority` ∈ low | medium | high | urgent
+ *  - date fields are ISO-8601 **strings** (Prisma DateTime), not epoch millis.
  *
- * Field names mirror the HumanOS REST contract. Enum-like fields are carried
- * as plain strings so an unexpected server value never crashes deserialization;
- * mapping into the strongly-typed domain model happens in [toDomain] with safe
- * fallbacks.
- *
- * @property id Server-assigned task id (the remote id from the app's perspective).
- * @property status One of PENDING / IN_PROGRESS / DONE / CANCELLED (case-insensitive on read).
- * @property priority One of LOW / MEDIUM / HIGH / CRITICAL (case-insensitive on read).
- * @property dueDate Epoch millis the task is due, null if none.
- * @property completedAt Epoch millis the task was completed, null if open.
- * @property createdAt Epoch millis the task was created on the server.
- * @property updatedAt Epoch millis of the last server-side mutation.
+ * Enum-like fields are carried as plain strings so an unexpected server value
+ * never crashes deserialization; mapping into the typed domain model happens in
+ * [toDomain] with safe fallbacks.
  */
 @Serializable
 data class RemoteTaskDto(
     val id: String,
+    val personId: String? = null,
     val title: String,
     val description: String? = null,
-    val status: String,
-    val priority: String,
-    val dueDate: Long? = null,
-    val completedAt: Long? = null,
+    val status: String = "pending",
+    val priority: String = "medium",
+    val dueDate: String? = null,
+    val completedAt: String? = null,
     val tags: List<String> = emptyList(),
-    val createdAt: Long? = null,
-    val updatedAt: Long? = null,
+    val createdAt: String? = null,
+    val updatedAt: String? = null,
 )
 
+/** Envelope for `GET /api/mobile/tasks` → `{ "tasks": [...] }`. */
+@Serializable
+data class TasksEnvelope(val tasks: List<RemoteTaskDto> = emptyList())
+
+/** Envelope for `POST/PATCH /api/mobile/tasks` → `{ "task": {...} }`. */
+@Serializable
+data class TaskEnvelope(val task: RemoteTaskDto)
+
 /**
- * Request body for `POST /api/tasks`.
+ * Request body for `POST /api/mobile/tasks`. Validated server-side by the same
+ * Zod schema the web uses, so `priority` MUST be one of low|medium|high|urgent
+ * and `dueDate` (if present) an ISO-8601 datetime string.
  */
 @Serializable
 data class CreateTaskDto(
     val title: String,
-    val description: String? = null,
-    val priority: String = TaskPriority.MEDIUM.name,
-    val dueDate: Long? = null,
+    val priority: String = "medium",
+    val dueDate: String? = null,
     val tags: List<String> = emptyList(),
 )
 
+/** Request body for `PATCH /api/mobile/tasks/{id}` — partial update. */
+@Serializable
+data class UpdateTaskDto(
+    val title: String? = null,
+    val status: String? = null,
+    val priority: String? = null,
+    val dueDate: String? = null,
+)
+
 /**
- * Map a server task into the domain [TaskItem].
- *
- * Remote tasks are, by definition, confirmed and sourced from HumanOS, so
- * those provenance fields are fixed here. Unknown status/priority strings fall
- * back to safe defaults rather than throwing.
+ * Map a server task into the domain [TaskItem]. Remote tasks are confirmed and
+ * sourced from HumanOS, so provenance is fixed. Unknown status/priority strings
+ * and unparseable dates fall back to safe defaults rather than throwing.
  */
 fun RemoteTaskDto.toDomain(): TaskItem {
     val now = System.currentTimeMillis()
@@ -66,33 +78,44 @@ fun RemoteTaskDto.toDomain(): TaskItem {
         description = description,
         status = parseTaskStatus(status),
         priority = parseTaskPriority(priority),
-        dueDate = dueDate,
-        completedAt = completedAt,
+        dueDate = isoToMillis(dueDate),
+        completedAt = isoToMillis(completedAt),
         tags = tags,
         origin = EntityOrigin.IMPORTED,
         governanceState = GovernanceState.CONFIRMED,
         source = IntegrationSource.HUMANOS,
-        createdAt = createdAt ?: now,
-        updatedAt = updatedAt ?: now,
+        createdAt = isoToMillis(createdAt) ?: now,
+        updatedAt = isoToMillis(updatedAt) ?: now,
         syncedAt = now,
     )
 }
 
-/** Build the create-request body for a new task. */
+/** Build the create-request body, mapping the domain priority to the server enum. */
 fun buildCreateTaskDto(
     title: String,
     description: String?,
     priority: TaskPriority,
 ): CreateTaskDto = CreateTaskDto(
     title = title,
-    description = description,
-    priority = priority.name,
+    priority = priority.toServerPriority(),
 )
+
+/**
+ * Domain → server priority. HumanOS uses `urgent` where the app models the top
+ * tier as `CRITICAL`; everything else lowercases 1:1.
+ */
+fun TaskPriority.toServerPriority(): String = when (this) {
+    TaskPriority.CRITICAL -> "urgent"
+    else -> name.lowercase()
+}
 
 private fun parseTaskStatus(raw: String): TaskStatus =
     TaskStatus.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) }
         ?: TaskStatus.PENDING
 
 private fun parseTaskPriority(raw: String): TaskPriority =
-    TaskPriority.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) }
-        ?: TaskPriority.MEDIUM
+    when (raw.lowercase()) {
+        "urgent" -> TaskPriority.CRITICAL
+        else -> TaskPriority.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) }
+            ?: TaskPriority.MEDIUM
+    }

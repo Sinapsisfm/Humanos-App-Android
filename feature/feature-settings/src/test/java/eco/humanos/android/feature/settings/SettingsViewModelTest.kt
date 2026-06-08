@@ -5,6 +5,7 @@ import android.content.ContextWrapper
 import com.google.common.truth.Truth.assertThat
 import eco.humanos.android.core.model.auth.AuthState
 import eco.humanos.android.core.model.auth.HumanOSSession
+import eco.humanos.android.core.model.auth.HumanosLinkState
 import eco.humanos.android.core.model.task.TaskItem
 import eco.humanos.android.core.model.task.TaskPriority
 import eco.humanos.android.core.update.UpdateChecker
@@ -13,11 +14,17 @@ import eco.humanos.android.data.auth.AuthRepository
 import eco.humanos.android.data.auth.GoogleCredentialManager
 import eco.humanos.android.integrations.humanos.DailyReviewDto
 import eco.humanos.android.integrations.humanos.HumanosGateway
+import eco.humanos.android.integrations.humanos.dto.CheckInDto
+import eco.humanos.android.integrations.humanos.dto.CheckInsEnvelope
+import eco.humanos.android.integrations.humanos.dto.MobileSnapshotDto
+import eco.humanos.android.integrations.humanos.dto.PersonDto
 import eco.humanos.android.integrations.quebot.QuebotGateway
 import eco.humanos.android.integrations.quebot.ServiceStatus
 import eco.humanos.android.integrations.quebot.SseEvent
 import eco.humanos.android.testing.MainDispatcherRule
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -56,6 +63,26 @@ class SettingsViewModelTest {
         override suspend fun fetchDailyReview(): Result<DailyReviewDto> =
             error("not used in these tests")
 
+        override suspend fun updateTaskStatus(taskId: String, status: String): Result<TaskItem> =
+            error("not used in these tests")
+
+        override suspend fun fetchSnapshot(): Result<MobileSnapshotDto> =
+            error("not used in these tests")
+
+        override suspend fun fetchCheckIns(): Result<CheckInsEnvelope> =
+            error("not used in these tests")
+
+        override suspend fun submitCheckIn(
+            energy: Int,
+            mood: Int,
+            stress: Int,
+            perceivedLoad: Int?,
+            note: String?,
+        ): Result<CheckInDto> = error("not used in these tests")
+
+        override suspend fun fetchPerson(): Result<PersonDto> =
+            error("not used in these tests")
+
         override suspend fun checkConnectivity(): Boolean = connected
     }
 
@@ -72,6 +99,9 @@ class SettingsViewModelTest {
     private class FakeAuthRepository(
         private val state: AuthState = AuthState.Unauthenticated,
     ) : AuthRepository {
+        override val humanosLinkState: StateFlow<HumanosLinkState> =
+            MutableStateFlow(HumanosLinkState.Unknown)
+
         override fun observeAuthState(): Flow<AuthState> = flowOf(state)
 
         override suspend fun signInWithGoogle(idToken: String): Result<AuthState.Authenticated> =

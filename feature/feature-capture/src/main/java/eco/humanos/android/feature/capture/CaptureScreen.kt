@@ -1,5 +1,13 @@
 package eco.humanos.android.feature.capture
 
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.provider.OpenableColumns
+import android.speech.RecognizerIntent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,6 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -44,6 +53,27 @@ fun CaptureScreen(
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    // Voice → on-device speech recognition; the transcript is appended to the note.
+    val voiceLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val spoken = result.data
+                ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+                ?.firstOrNull()
+                .orEmpty()
+            viewModel.appendText(spoken)
+        }
+    }
+    // Photo / file → Storage Access Framework picker; the chosen item is noted.
+    val photoLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent(),
+    ) { uri -> if (uri != null) viewModel.appendText("📷 Imagen: ${context.attachmentName(uri)}") }
+    val fileLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent(),
+    ) { uri -> if (uri != null) viewModel.appendText("📎 Archivo: ${context.attachmentName(uri)}") }
 
     Column(
         modifier = modifier
@@ -66,17 +96,27 @@ fun CaptureScreen(
         )
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilledTonalButton(onClick = { /* TODO: camera */ }) {
+            FilledTonalButton(onClick = { photoLauncher.launch("image/*") }) {
                 Icon(Icons.Outlined.CameraAlt, contentDescription = null)
                 Spacer(Modifier.width(4.dp))
                 Text("Foto")
             }
-            FilledTonalButton(onClick = { /* TODO: voice */ }) {
+            FilledTonalButton(onClick = {
+                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                    putExtra(
+                        RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                        RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
+                    )
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "es-CL")
+                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Dicta tu nota…")
+                }
+                runCatching { voiceLauncher.launch(intent) }
+            }) {
                 Icon(Icons.Outlined.Mic, contentDescription = null)
                 Spacer(Modifier.width(4.dp))
                 Text("Voz")
             }
-            FilledTonalButton(onClick = { /* TODO: file */ }) {
+            FilledTonalButton(onClick = { fileLauncher.launch("*/*") }) {
                 Icon(Icons.Outlined.AttachFile, contentDescription = null)
                 Spacer(Modifier.width(4.dp))
                 Text("Archivo")
@@ -169,3 +209,12 @@ private fun relativeTime(epochMillis: Long): String {
         else -> "hace ${days / 7L} sem"
     }
 }
+
+/** Best-effort human-readable name for a picked content URI (SAF display name). */
+private fun Context.attachmentName(uri: Uri): String =
+    runCatching {
+        contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+            ?.use { cursor ->
+                if (cursor.moveToFirst() && cursor.columnCount > 0) cursor.getString(0) else null
+            }
+    }.getOrNull() ?: uri.lastPathSegment ?: "adjunto"
