@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -198,6 +199,11 @@ fun WebViewScreen(
         Box(
             modifier = Modifier
                 .padding(innerPadding)
+                // Edge-to-edge (enableEdgeToEdge) means adjustResize no longer
+                // shrinks content for the keyboard; consume the IME inset here so
+                // the WebView resizes and the chat compose box stays above the
+                // keyboard (fixes "el teclado tapa el cuadro").
+                .imePadding()
                 .fillMaxSize(),
         ) {
             when {
