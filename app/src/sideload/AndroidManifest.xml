@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sideload-only permissions. The in-app APK auto-update downloads the release
+     APK and launches the system installer, which requires REQUEST_INSTALL_PACKAGES.
+     The Play flavor must NOT declare this (Google distributes the AAB itself). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
+</manifest>

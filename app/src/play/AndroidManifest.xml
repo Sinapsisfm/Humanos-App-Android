@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Play flavor manifest overrides.
+     - Strips com.google.android.gms.permission.AD_ID, which Firebase Analytics
+       (play-services-measurement) contributes via manifest merge. HumanOS does
+       NOT use advertising / ad attribution, so we remove it to keep the Play
+       Data Safety declaration clean and avoid an unnecessary sensitive permission.
+     - REQUEST_INSTALL_PACKAGES is intentionally absent here (it exists only in
+       the sideload flavor). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission
+        android:name="com.google.android.gms.permission.AD_ID"
+        tools:node="remove" />
+    <!-- Privacy Sandbox ad-attribution permissions that play-services-measurement
+         contributes. HumanOS does not do ad measurement → removed. -->
+    <uses-permission
+        android:name="android.permission.ACCESS_ADSERVICES_AD_ID"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION"
+        tools:node="remove" />
+
+</manifest>

@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("humanos.android.application")
     id("humanos.compose")
@@ -25,6 +28,25 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    buildFeatures {
+        // Needed for the per-flavor ENABLE_APK_AUTOUPDATE BuildConfig flag below.
+        buildConfig = true
+    }
+
+    // Distribution flavor: "sideload" (current in-app APK self-update) vs "play"
+    // (Google Play AAB — no self-update, no install-packages permission).
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("sideload") {
+            dimension = "distribution"
+            buildConfigField("boolean", "ENABLE_APK_AUTOUPDATE", "true")
+        }
+        create("play") {
+            dimension = "distribution"
+            buildConfigField("boolean", "ENABLE_APK_AUTOUPDATE", "false")
+        }
+    }
+
     signingConfigs {
         // Sign debug builds with Felipe's Firebase-registered debug keystore
         // (SHA-1 A6:04:1D:CF:…) so Google Sign-In works and each APK installs
@@ -43,6 +65,34 @@ android {
                     keyAlias = System.getenv("DEBUG_KEY_ALIAS") ?: "androiddebugkey"
                     keyPassword = System.getenv("DEBUG_KEY_PASSWORD") ?: "android"
                 }
+            }
+        }
+        // Release (upload) signing for Google Play. Reads a gitignored
+        // keystore.properties at the repo root — NEVER committed. If absent, the
+        // release build is left unsigned so CI/local can still assemble/validate.
+        create("release") {
+            val kp = rootProject.file("keystore.properties")
+            if (kp.exists()) {
+                val props = Properties()
+                FileInputStream(kp).use { props.load(it) }
+                val ks = props.getProperty("storeFile")?.let { rootProject.file(it) }
+                if (ks != null && ks.exists()) {
+                    storeFile = ks
+                    storePassword = props.getProperty("storePassword")
+                    keyAlias = props.getProperty("keyAlias")
+                    keyPassword = props.getProperty("keyPassword")
+                }
+            }
+        }
+    }
+
+    buildTypes {
+        getByName("release") {
+            // Apply the upload signing config only when a keystore is configured
+            // (keystore.properties present). isMinifyEnabled + proguard come from
+            // the application convention plugin; release is non-debuggable.
+            if (rootProject.file("keystore.properties").exists()) {
+                signingConfig = signingConfigs.getByName("release")
             }
         }
     }

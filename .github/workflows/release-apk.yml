@@ -85,11 +85,13 @@ jobs:
           echo "::warning::GOOGLE_SERVICES_JSON secret not set. Building WITHOUT Firebase config — Google Sign-In will not work in this APK. Add the secret in repo Settings → Secrets → Actions."
 
       - name: Build debug APK
-        run: ./gradlew assembleDebug
+        # The `sideload` flavor carries the in-app auto-update (this release feeds
+        # exactly that updater). The `play` flavor is published via the Play Console.
+        run: ./gradlew assembleSideloadDebug
 
       - name: Rename APK
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk "humanOS-${{ github.ref_name }}.apk"
+          cp app/build/outputs/apk/sideload/debug/app-sideload-debug.apk "humanOS-${{ github.ref_name }}.apk"
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2

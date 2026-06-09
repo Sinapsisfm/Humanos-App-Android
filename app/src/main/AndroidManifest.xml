@@ -2,10 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Update the app from the phone: download the release APK and launch the
-         system installer (no PC / sideload transfer). Android prompts the user
-         to allow "install unknown apps" the first time. -->
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- REQUEST_INSTALL_PACKAGES lives in the `sideload` flavor only
+         (app/src/sideload/AndroidManifest.xml) — the Play build must not have it. -->
 
     <application
         android:name=".HumanosApp"
