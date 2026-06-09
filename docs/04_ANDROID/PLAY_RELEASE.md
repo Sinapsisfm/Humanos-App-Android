@@ -74,10 +74,12 @@ Confirmado contra el manifest mergeado real de `playRelease` (sin atributo `andr
 
 **Prácticas de seguridad a declarar:** datos cifrados en tránsito (HTTPS); el usuario puede pedir eliminación de datos (flujo ARCO / Ley 21.719 ya en humanos-eco).
 
-⚠️ **FLAGS para Felipe (sensibles, requieren decisión):**
-- **Datos de salud:** los módulos salud/care muestran datos clínicos (vía WebView). Si el usuario los ve/maneja en la app, Play exige declarar **"Health and fitness"** y el privacy policy debe cubrirlos (coherente con Ley 21.719). Confirmar alcance.
-- **Menores (estudiante):** si usan menores de edad, aplican Play Families Policy + Ley 21.719 (datos de menores). El privacy policy y el Data Safety deben contemplarlo.
-- ¿Firebase **Analytics** está realmente activo? Si no se usa, conviene removerlo (y simplifica Data Safety + saca AD_ID de raíz).
+**CONFIRMADO por Felipe (2026-06-09):** la app maneja **datos sensibles de salud** y **datos de menores**, y se mantiene **Firebase Analytics** (beneficio). Implicancias obligatorias:
+
+- **Data Safety — Salud:** declarar **"Health and fitness"** / datos de salud, recolectado y vinculado al usuario, propósito funcionalidad. Cifrado en tránsito + opción de borrado (ARCO / Ley 21.719).
+- **Data Safety — Menores / Play Families Policy:** la audiencia incluye menores → en Play Console hay que fijar **target audience** que incluya niños, completar **content rating**, cumplir **Designed for Families**, y declarar recolección de datos de menores. Sin ads dirigidos a menores (ya removimos AD_ID/ADSERVICES → ok).
+- **Firebase Analytics + menores (DECISIÓN DE PRODUCTO pendiente):** si la app es dirigida a/usada por menores, Analytics necesita tratamiento *child-directed* (limitar recolección bajo la edad local) o un **age-gate** (pantalla neutral de edad) para diferenciar adultos vs menores. Definir: ¿audiencia mixta (adultos + estudiantes) con age-gate, o dirigida a niños?
+- **Analytics (general):** declarar en Data Safety "interacciones con la app", "diagnósticos/crash" y "ID de instancia" (device/other IDs).
 
 ## 6. Recomendación de política de privacidad mínima (entregable)
 
@@ -87,8 +89,9 @@ Hostear en URL estable (ej. `https://www.humanos.eco/legal/privacidad-app`) — 
 3. **Terceros:** Google/Firebase (auth, analítica). Sin venta de datos. Sin publicidad.
 4. **Base legal y derechos (Ley 21.719):** acceso, rectificación, cancelación, oposición (ARCO); cómo eliminar cuenta/datos; contacto del DPO.
 5. **Retención** y **seguridad** (cifrado en tránsito).
-6. **Menores** (si aplica estudiante) y **datos sensibles de salud** (si aplica).
-7. **Contacto** y fecha de última actualización.
+6. **Datos sensibles de salud (OBLIGATORIO — la app los maneja):** finalidad clínica, cifrado, derechos reforzados de Ley 21.719.
+7. **Menores (OBLIGATORIO):** tratamiento de datos de menores, **consentimiento parental** (Ley 21.719) y cómo ejercer derechos; si la audiencia es mixta, describir el age-gate.
+8. **Contacto** (DPO) y fecha de última actualización.
 
 > HumanOS ya tiene el framework Ley 21.719 (DPO, EIPD, ARCO) en humanos-eco; conviene publicar una página de privacidad específica de la app que reuse ese contenido.
 
@@ -102,9 +105,11 @@ Revisión del código fuente (grep): **sin secretos hardcodeados, sin endpoints 
 Hecho: flag `ENABLE_APK_AUTOUPDATE` por flavor + `REQUEST_INSTALL_PACKAGES` fuera de Play. **Falta:** ocultar/desactivar el botón de "buscar actualización" en `feature-settings` cuando el flag es false (o vía `bool` de recurso override en `app/src/play/res`), para que el flavor Play no ofrezca update por APK.
 
 ## 9. Pendiente / próximos pasos
-- [ ] Felipe: generar upload key + `keystore.properties` (§3) y decidir Play App Signing.
-- [ ] Confirmar permisos exactos del manifest mergeado de `playRelease` (pegar acá).
-- [ ] Gatear UI de update en `feature-settings` (§8).
-- [ ] Decidir esquema de `versionCode` para Play (actual 16; Play exige monotónico creciente).
-- [ ] Confirmar uso de Firebase Analytics + alcance de datos de salud/menores (§5).
-- [ ] Validar que `bundlePlayRelease` pasa con minify (R8) — y firmar con la upload key.
+- [ ] **Felipe:** generar upload key + `keystore.properties` (§3) → después correr `clean bundlePlayRelease` para el AAB firmado. Activar Play App Signing.
+- [ ] **Felipe (Play Console):** ¿cuenta de desarrollador Sinapsis creada? Target audience + content rating + Designed for Families (menores) + Data Safety (salud + menores) + URL de privacy policy.
+- [ ] **DECISIÓN producto:** audiencia mixta con age-gate vs dirigida a niños (afecta Firebase Analytics child-directed) (§5).
+- [ ] Gatear UI de update en `feature-settings` con `ENABLE_APK_AUTOUPDATE` (§8).
+- [x] ~~Permisos exactos del manifest mergeado~~ confirmados (§4).
+- [x] ~~versionCode~~ monotónico creciente (Google), actual 16, +1 por release.
+- [x] ~~Firebase Analytics~~ se mantiene (beneficio) · datos salud/menores **confirmados** (§5).
+- [x] ~~`bundlePlayRelease` con minify (R8)~~ **validado** → AAB 6.6MB (falta solo firmar con la upload key de Felipe).
