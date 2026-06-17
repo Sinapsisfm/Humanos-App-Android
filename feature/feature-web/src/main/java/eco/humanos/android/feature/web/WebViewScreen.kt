@@ -1,14 +1,12 @@
 package eco.humanos.android.feature.web
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
-import android.speech.RecognizerIntent
 import android.widget.Toast
 import android.webkit.ConsoleMessage
 import android.webkit.CookieManager
@@ -22,35 +20,33 @@ import android.webkit.WebViewClient
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.BugReport
-import androidx.compose.material.icons.filled.Forum
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -61,22 +57,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import org.json.JSONObject
 
 /**
  * Embedded HumanOS web module in a [WebView], authenticated via the session
- * bridge (ADR-0006). Full-screen with a slim top bar (back / debug / share /
- * reload). A built-in diagnostic — a DOM probe + captured console warnings/errors
- * — is always shareable (🐞), so a blank-content issue can be diagnosed without a
- * desktop debugger. `setWebContentsDebuggingEnabled` also enables chrome://inspect.
+ * bridge (ADR-0006). Thin shell (web-first): NO native top bar — the WebView
+ * fills the screen edge-to-edge and the web's own header/nav is the chrome.
+ * System-bar insets are applied EXACTLY ONCE here (statusBars + navBars via
+ * systemBars + imePadding). Device-only actions (Claude channel, native
+ * Settings, reload, diagnostic) live in a single discreet floating menu (⋮),
+ * not a permanent bar. `setWebContentsDebuggingEnabled` keeps chrome://inspect.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun WebViewScreen(
@@ -97,27 +94,7 @@ fun WebViewScreen(
     val consoleLog = remember { mutableStateListOf<String>() }
     var domProbe by remember { mutableStateOf("(sondeo pendiente)") }
     var showPanel by remember { mutableStateOf(false) }
-
-    // Native dictation for the chat — webkitSpeechRecognition doesn't work in the
-    // WebView, so use the system recognizer and inject the transcript into the
-    // page's textarea via a React-compatible value setter + input event.
-    val voiceLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val text = result.data
-                ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-                ?.firstOrNull()
-                .orEmpty()
-            if (text.isNotBlank()) {
-                val js = "(function(){var el=document.querySelector('textarea');if(!el)return;" +
-                    "var d=Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,'value');" +
-                    "d.set.call(el,(el.value?el.value+' ':'')+" + JSONObject.quote(text) + ");" +
-                    "el.dispatchEvent(new Event('input',{bubbles:true}));el.focus();})();"
-                webView?.evaluateJavascript(js, null)
-            }
-        }
-    }
+    var menuOpen by remember { mutableStateOf(false) }
 
     // File picker for the chat's attach (📎) button — the WebView's <input
     // type=file> does nothing unless onShowFileChooser launches a picker.
@@ -129,6 +106,8 @@ fun WebViewScreen(
         filePathCallback = null
     }
 
+    // Back: walk the web history first; at the web root, hand off (the app's
+    // home route exits, sub-modules pop back to the web home).
     BackHandler(enabled = true) {
         val wv = webView
         if (canGoBack && wv != null) wv.goBack() else onBack()
@@ -141,88 +120,31 @@ fun WebViewScreen(
         append(consoleLog.takeLast(25).joinToString("\n"))
     }
 
-    Scaffold(
-        modifier = modifier,
-        topBar = {
-            TopAppBar(
-                title = { Text(state.title.ifBlank { "HumanOS" }, maxLines = 1) },
-                navigationIcon = {
-                    // One tap returns to the app's native tabs (the bottom bar
-                    // reappears). WebView history is still walkable via the device
-                    // back button. Fixes "had to press back many times".
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver a la app")
-                    }
-                },
-                actions = {
-                    // Thin shell: from the web home, reach native-only surfaces
-                    // (Claude channel + native Settings) without a permanent bar.
-                    if (moduleKey == "home") {
-                        onOpenChat?.let { open ->
-                            IconButton(onClick = open) {
-                                Icon(Icons.Filled.Forum, contentDescription = "Canal Claude")
-                            }
-                        }
-                        onOpenSettings?.let { open ->
-                            IconButton(onClick = open) {
-                                Icon(Icons.Filled.Settings, contentDescription = "Configuración")
-                            }
-                        }
-                    }
-                    if (moduleKey == "chat") {
-                        IconButton(onClick = {
-                            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                putExtra(
-                                    RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                                    RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
-                                )
-                                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "es-CL")
-                                putExtra(RecognizerIntent.EXTRA_PROMPT, "Dictá tu mensaje…")
-                            }
-                            runCatching { voiceLauncher.launch(intent) }
-                        }) {
-                            Icon(Icons.Filled.Mic, contentDescription = "Dictar")
-                        }
-                    }
-                    // Always available — even when the page renders blank with no errors.
-                    IconButton(onClick = { showPanel = !showPanel }) {
-                        Icon(Icons.Filled.BugReport, contentDescription = "Diagnóstico")
-                    }
-                    IconButton(onClick = {
-                        val report = debugReport()
-                        // Copy to clipboard (reliable) + a toast, then also offer the
-                        // share sheet. Felipe can paste the diagnostic anywhere.
-                        runCatching {
-                            val cb = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            cb.setPrimaryClip(ClipData.newPlainText("humanOS diag", report))
-                        }
-                        Toast.makeText(context, "Diagnóstico copiado al portapapeles", Toast.LENGTH_SHORT).show()
-                        val send = Intent(Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, report)
-                        }
-                        runCatching {
-                            context.startActivity(Intent.createChooser(send, "Compartir diagnóstico"))
-                        }
-                    }) {
-                        Icon(Icons.Filled.Share, contentDescription = "Compartir diagnóstico")
-                    }
-                    IconButton(onClick = { webView?.reload() }) {
-                        Icon(Icons.Filled.Refresh, contentDescription = "Recargar")
-                    }
-                },
-            )
-        },
-    ) { innerPadding ->
+    fun shareDiag() {
+        val report = debugReport()
+        runCatching {
+            val cb = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            cb.setPrimaryClip(ClipData.newPlainText("humanOS diag", report))
+        }
+        Toast.makeText(context, "Diagnóstico copiado al portapapeles", Toast.LENGTH_SHORT).show()
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, report)
+        }
+        runCatching { context.startActivity(Intent.createChooser(send, "Compartir diagnóstico")) }
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) {
+        // Content layer: edge-to-edge WebView, insets applied ONCE.
         Box(
             modifier = Modifier
-                .padding(innerPadding)
-                // Edge-to-edge (enableEdgeToEdge) means adjustResize no longer
-                // shrinks content for the keyboard; consume the IME inset here so
-                // the WebView resizes and the chat compose box stays above the
-                // keyboard (fixes "el teclado tapa el cuadro").
-                .imePadding()
-                .fillMaxSize(),
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.systemBars)
+                .imePadding(),
         ) {
             when {
                 state.isLoading -> {
@@ -262,9 +184,6 @@ fun WebViewScreen(
                                     javaScriptCanOpenWindowsAutomatically = true
                                     setSupportMultipleWindows(false)
                                     useWideViewPort = true
-                                    // overview mode mis-computes viewport height
-                                    // for app-shell layouts → body collapsed to 0
-                                    // (blank content). Off = use the real viewport.
                                     loadWithOverviewMode = false
                                     mediaPlaybackRequiresUserGesture = false
                                     mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
@@ -328,9 +247,6 @@ fun WebViewScreen(
 
                                     override fun onPageFinished(view: WebView?, url: String?) {
                                         canGoBack = view?.canGoBack() == true
-                                        // Force concrete pixel heights (not vh/dvh,
-                                        // which collapse in this WebView) so the
-                                        // content is visible. Re-apply post-hydration.
                                         view?.evaluateJavascript(HEIGHT_FIX_JS, null)
                                         view?.postDelayed({
                                             view.evaluateJavascript(HEIGHT_FIX_JS, null)
@@ -380,7 +296,7 @@ fun WebViewScreen(
                                 verticalArrangement = Arrangement.spacedBy(6.dp),
                             ) {
                                 Text(
-                                    "Diagnóstico (toca 📤 para compartir)",
+                                    "Diagnóstico (toca Compartir para enviármelo)",
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold,
                                 )
@@ -395,20 +311,63 @@ fun WebViewScreen(
                                         Text(it, style = MaterialTheme.typography.bodySmall)
                                     }
                                 }
+                                Button(onClick = { shareDiag() }) { Text("Compartir diagnóstico") }
                             }
                         }
                     }
                 }
             }
         }
+
+        // Floating discreet menu (⋮) — the only native chrome over the web.
+        // Anchored just below the status bar at the end edge.
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .padding(top = 2.dp, end = 2.dp),
+        ) {
+            IconButton(onClick = { menuOpen = true }) {
+                Icon(
+                    Icons.Filled.MoreVert,
+                    contentDescription = "Menú del dispositivo",
+                    tint = Color.White.copy(alpha = 0.55f),
+                )
+            }
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                if (moduleKey == "home") {
+                    onOpenChat?.let { open ->
+                        DropdownMenuItem(
+                            text = { Text("Canal Claude") },
+                            onClick = { menuOpen = false; open() },
+                        )
+                    }
+                    onOpenSettings?.let { open ->
+                        DropdownMenuItem(
+                            text = { Text("Configuración") },
+                            onClick = { menuOpen = false; open() },
+                        )
+                    }
+                }
+                DropdownMenuItem(
+                    text = { Text("Recargar") },
+                    onClick = { menuOpen = false; webView?.reload() },
+                )
+                DropdownMenuItem(
+                    text = { Text("Diagnóstico") },
+                    onClick = { menuOpen = false; showPanel = !showPanel },
+                )
+                if (moduleKey != "home") {
+                    DropdownMenuItem(
+                        text = { Text("Volver a la app") },
+                        onClick = { menuOpen = false; onBack() },
+                    )
+                }
+            }
+        }
     }
 }
 
-/**
- * Reports whether the page content is present (and how tall) vs the visible
- * shell — distinguishes a layout collapse (mainHeight ~0) from empty data
- * (mainChildren 0) from a redirect (unexpected url).
- */
 /**
  * Force concrete pixel heights so the page content is visible. The web shell
  * uses viewport-height units (vh/dvh) that collapse to ~0 in this WebView
