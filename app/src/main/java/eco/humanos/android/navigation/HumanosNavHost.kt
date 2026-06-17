@@ -13,11 +13,14 @@ import eco.humanos.android.feature.web.WebModulesScreen
 import eco.humanos.android.feature.web.WebViewScreen
 
 /**
- * Root navigation host for the humanOS app.
+ * Root navigation host (thin native shell · web-first).
  *
- * Wires each [TopLevelDestination] route to its corresponding feature
- * screen composable. Nested navigation graphs for detail screens will
- * be added in later phases.
+ * Start = DASHBOARD, used ONLY as an auth gate: as soon as the HumanOS session
+ * is ready it hands off to the full-screen HumanOS Web shell (`web/home`),
+ * popping itself so "back" never returns to a native home. The native
+ * Tasks/Capture/Modules screens stay compiled but are deprecated and no longer
+ * reachable from a native bar. Native Settings + the Claude channel are reached
+ * from the web shell's discreet top actions (onOpenSettings / onOpenChat).
  */
 @Composable
 fun HumanosNavHost(
@@ -30,7 +33,14 @@ fun HumanosNavHost(
         modifier = modifier,
     ) {
         composable(TopLevelDestination.DASHBOARD.route) {
-            DashboardScreen()
+            DashboardScreen(
+                onReady = {
+                    navController.navigate("web/home") {
+                        popUpTo(TopLevelDestination.DASHBOARD.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+            )
         }
         composable(TopLevelDestination.TASKS.route) {
             TasksScreen()
@@ -47,6 +57,8 @@ fun HumanosNavHost(
             WebViewScreen(
                 moduleKey = backStackEntry.arguments?.getString("moduleKey").orEmpty(),
                 onBack = { navController.popBackStack() },
+                onOpenSettings = { navController.navigate(TopLevelDestination.SETTINGS.route) },
+                onOpenChat = { navController.navigate("web/chat") },
             )
         }
         composable(TopLevelDestination.SETTINGS.route) {

@@ -35,8 +35,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -81,6 +83,8 @@ fun WebViewScreen(
     moduleKey: String,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenSettings: (() -> Unit)? = null,
+    onOpenChat: (() -> Unit)? = null,
     viewModel: WebViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -151,6 +155,20 @@ fun WebViewScreen(
                     }
                 },
                 actions = {
+                    // Thin shell: from the web home, reach native-only surfaces
+                    // (Claude channel + native Settings) without a permanent bar.
+                    if (moduleKey == "home") {
+                        onOpenChat?.let { open ->
+                            IconButton(onClick = open) {
+                                Icon(Icons.Filled.Forum, contentDescription = "Canal Claude")
+                            }
+                        }
+                        onOpenSettings?.let { open ->
+                            IconButton(onClick = open) {
+                                Icon(Icons.Filled.Settings, contentDescription = "Configuración")
+                            }
+                        }
+                    }
                     if (moduleKey == "chat") {
                         IconButton(onClick = {
                             val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {

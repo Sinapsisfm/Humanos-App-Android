@@ -25,9 +25,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,11 +52,22 @@ import eco.humanos.android.core.model.task.TaskStatus
 fun DashboardScreen(
     viewModel: DashboardViewModel = hiltViewModel(),
     modifier: Modifier = Modifier,
+    onReady: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var showCheckIn by remember { mutableStateOf(false) }
     var selectedTask by remember { mutableStateOf<TaskItem?>(null) }
+
+    // Thin native shell: as soon as the HumanOS session is ready, hand off to the
+    // full-screen web shell. The native dashboard is only the sign-in gate now.
+    var handedOff by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(uiState.isSignedIn, uiState.linkState) {
+        if (!handedOff && uiState.isSignedIn && uiState.linkState !is HumanosLinkState.Failed) {
+            handedOff = true
+            onReady()
+        }
+    }
 
     if (uiState.isLoading) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
