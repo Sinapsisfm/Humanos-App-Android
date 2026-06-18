@@ -22,8 +22,8 @@ android {
     defaultConfig {
         // Definitive applicationId confirmed by Felipe 2026-06-07 (Q-003 resolved)
         applicationId = "eco.humanos.android"
-        versionCode = 20
-        versionName = "0.5.3"
+        versionCode = 22
+        versionName = "0.5.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
