@@ -1,12 +1,14 @@
 package eco.humanos.android.feature.web
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
+import android.speech.RecognizerIntent
 import android.widget.Toast
 import android.webkit.ConsoleMessage
 import android.webkit.CookieManager
@@ -24,6 +26,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,6 +39,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -64,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.json.JSONObject
 
 /**
  * Embedded HumanOS web module in a [WebView], authenticated via the session
@@ -104,6 +109,29 @@ fun WebViewScreen(
     ) { uri ->
         filePathCallback?.onReceiveValue(if (uri != null) arrayOf(uri) else null)
         filePathCallback = null
+    }
+
+    // Mic nativo restaurado (el de la barra superior que se perdió al pasar al
+    // thin-shell). webkitSpeechRecognition no corre en la WebView, así que usamos
+    // el reconocedor del sistema e inyectamos el texto dictado en el <textarea>
+    // del chat con un setter compatible con React + evento input (verificado
+    // contra /mobile-chat: React retiene el valor → onChange dispara).
+    val voiceLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val text = result.data
+                ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+                ?.firstOrNull()
+                .orEmpty()
+            if (text.isNotBlank()) {
+                val js = "(function(){var el=document.querySelector('textarea');if(!el)return;" +
+                    "var d=Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,'value');" +
+                    "d.set.call(el,(el.value?el.value+' ':'')+" + JSONObject.quote(text) + ");" +
+                    "el.dispatchEvent(new Event('input',{bubbles:true}));el.focus();})();"
+                webView?.evaluateJavascript(js, null)
+            }
+        }
     }
 
     // Back: walk the web history first; at the web root, hand off (the app's
@@ -319,49 +347,72 @@ fun WebViewScreen(
             }
         }
 
-        // Floating discreet menu (⋮) — the only native chrome over the web.
-        // Anchored just below the status bar at the end edge.
-        Box(
+        // Floating discreet controls — the only native chrome over the web:
+        // the restored chat mic (lost in the thin-shell) + the ⋮ menu. Anchored
+        // just below the status bar at the end edge.
+        Row(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .windowInsetsPadding(WindowInsets.statusBars)
                 .padding(top = 2.dp, end = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = { menuOpen = true }) {
-                Icon(
-                    Icons.Filled.MoreVert,
-                    contentDescription = "Menú del dispositivo",
-                    tint = Color.White.copy(alpha = 0.55f),
-                )
-            }
-            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                if (moduleKey == "home") {
-                    onOpenChat?.let { open ->
-                        DropdownMenuItem(
-                            text = { Text("Canal Claude") },
-                            onClick = { menuOpen = false; open() },
+            if (moduleKey == "chat") {
+                IconButton(onClick = {
+                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                        putExtra(
+                            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
                         )
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "es-CL")
+                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Dicta tu mensaje…")
                     }
-                    onOpenSettings?.let { open ->
-                        DropdownMenuItem(
-                            text = { Text("Configuración") },
-                            onClick = { menuOpen = false; open() },
-                        )
-                    }
-                }
-                DropdownMenuItem(
-                    text = { Text("Recargar") },
-                    onClick = { menuOpen = false; webView?.reload() },
-                )
-                DropdownMenuItem(
-                    text = { Text("Diagnóstico") },
-                    onClick = { menuOpen = false; showPanel = !showPanel },
-                )
-                if (moduleKey != "home") {
-                    DropdownMenuItem(
-                        text = { Text("Volver a la app") },
-                        onClick = { menuOpen = false; onBack() },
+                    runCatching { voiceLauncher.launch(intent) }
+                }) {
+                    Icon(
+                        Icons.Filled.Mic,
+                        contentDescription = "Dictar",
+                        tint = Color.White.copy(alpha = 0.7f),
                     )
+                }
+            }
+            Box {
+                IconButton(onClick = { menuOpen = true }) {
+                    Icon(
+                        Icons.Filled.MoreVert,
+                        contentDescription = "Menú del dispositivo",
+                        tint = Color.White.copy(alpha = 0.55f),
+                    )
+                }
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    if (moduleKey == "home") {
+                        onOpenChat?.let { open ->
+                            DropdownMenuItem(
+                                text = { Text("Canal Claude") },
+                                onClick = { menuOpen = false; open() },
+                            )
+                        }
+                        onOpenSettings?.let { open ->
+                            DropdownMenuItem(
+                                text = { Text("Configuración") },
+                                onClick = { menuOpen = false; open() },
+                            )
+                        }
+                    }
+                    DropdownMenuItem(
+                        text = { Text("Recargar") },
+                        onClick = { menuOpen = false; webView?.reload() },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Diagnóstico") },
+                        onClick = { menuOpen = false; showPanel = !showPanel },
+                    )
+                    if (moduleKey != "home") {
+                        DropdownMenuItem(
+                            text = { Text("Volver a la app") },
+                            onClick = { menuOpen = false; onBack() },
+                        )
+                    }
                 }
             }
         }
