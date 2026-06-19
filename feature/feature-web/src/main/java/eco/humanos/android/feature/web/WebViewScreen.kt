@@ -113,11 +113,12 @@ fun WebViewScreen(
         filePathCallback = null
     }
 
-    // Dictado nativo del chat: webkitSpeechRecognition no corre en la WebView, así
-    // que usamos el reconocedor del sistema e inyectamos el texto dictado en el
-    // <textarea> con un setter compatible con React + evento input (verificado
-    // contra /mobile-chat: React retiene el valor → onChange dispara). Se dispara
-    // desde el botón de mic de la página (puente AndroidVoice) o el menú ⋮.
+    // Dictado nativo (webkitSpeechRecognition no corre en la WebView). Dos modos
+    // según quién lo lanzó:
+    //  - "inject": el canal (/mobile-chat) → inyecta en su <textarea> directo.
+    //  - "event":  el mic GLOBAL (GlobalSTT, otras pantallas) → despacha el evento
+    //    'humanos:dictation' para que la página inyecte en el input ENFOCADO.
+    val voiceMode = remember { mutableStateOf("inject") }
     val voiceLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
     ) { result ->
@@ -127,19 +128,25 @@ fun WebViewScreen(
                 ?.firstOrNull()
                 .orEmpty()
             if (text.isNotBlank()) {
-                val js = "(function(){var el=document.querySelector('textarea');if(!el)return;" +
+                val js = if (voiceMode.value == "event") {
+                    "window.dispatchEvent(new CustomEvent('humanos:dictation',{detail:{text:" +
+                        JSONObject.quote(text) + "}}));"
+                } else {
+                    "(function(){var el=document.querySelector('textarea');if(!el)return;" +
                     "var d=Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,'value');" +
                     "d.set.call(el,(el.value?el.value+' ':'')+" + JSONObject.quote(text) + ");" +
                     "el.dispatchEvent(new Event('input',{bubbles:true}));el.focus();})();"
+                }
                 webView?.evaluateJavascript(js, null)
             }
         }
     }
 
     val mainHandler = remember { Handler(Looper.getMainLooper()) }
-    // Lanza el reconocedor del sistema (es-CL). Lo usan el botón de mic de la
-    // página (vía el puente AndroidVoice) y el item "Dictar" del menú ⋮.
-    fun launchVoice() {
+    // Lanza el reconocedor del sistema (es-CL). mode = "inject" (canal) | "event"
+    // (mic global). Lo usan el puente AndroidVoice y el item "Dictar" del menú ⋮.
+    fun launchVoice(mode: String = "inject") {
+        voiceMode.value = mode
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, "es-CL")
@@ -313,9 +320,17 @@ fun WebViewScreen(
                                 // binder, así que saltamos a main para lanzar el
                                 // reconocedor del sistema.
                                 addJavascriptInterface(object {
+                                    // Canal: inyecta en el <textarea> del chat.
                                     @JavascriptInterface
                                     fun start() {
-                                        mainHandler.post { launchVoice() }
+                                        mainHandler.post { launchVoice("inject") }
+                                    }
+                                    // Mic global (otras pantallas): despacha
+                                    // 'humanos:dictation' para que GlobalSTT inyecte
+                                    // en el input enfocado.
+                                    @JavascriptInterface
+                                    fun startDictation() {
+                                        mainHandler.post { launchVoice("event") }
                                     }
                                 }, "AndroidVoice")
                                 loadUrl(state.url!!)
