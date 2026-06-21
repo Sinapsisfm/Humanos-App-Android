@@ -15,6 +15,7 @@ import eco.humanos.android.core.model.task.TaskStatus
 import eco.humanos.android.data.auth.AuthRepository
 import eco.humanos.android.data.auth.GoogleCredentialManager
 import eco.humanos.android.data.tasks.repository.TaskRepository
+import eco.humanos.android.integrations.humanos.AgentMessage
 import eco.humanos.android.integrations.humanos.DailyReviewDto
 import eco.humanos.android.integrations.humanos.HumanosGateway
 import eco.humanos.android.integrations.humanos.dto.CheckInDto
@@ -79,6 +80,8 @@ class DashboardViewModelTest {
         override suspend fun submitCheckIn(energy: Int, mood: Int, stress: Int, perceivedLoad: Int?, note: String?): Result<CheckInDto> =
             Result.success(CheckInDto(id = "c1", energy = energy, mood = mood, stress = stress))
         override suspend fun fetchPerson(): Result<PersonDto> = Result.success(PersonDto(id = "p1"))
+        override suspend fun fetchMessages(sinceIso: String?): Result<List<AgentMessage>> =
+            Result.success(emptyList())
         override suspend fun checkConnectivity(): Boolean = true
     }
 

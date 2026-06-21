@@ -4,6 +4,7 @@ import eco.humanos.android.integrations.humanos.dto.CheckInEnvelope
 import eco.humanos.android.integrations.humanos.dto.CheckInsEnvelope
 import eco.humanos.android.integrations.humanos.dto.CreateCheckInDto
 import eco.humanos.android.integrations.humanos.dto.CreateTaskDto
+import eco.humanos.android.integrations.humanos.dto.MessagesEnvelope
 import eco.humanos.android.integrations.humanos.dto.MobileExchangeResponse
 import eco.humanos.android.integrations.humanos.dto.PersonEnvelope
 import eco.humanos.android.integrations.humanos.dto.SnapshotEnvelope
@@ -84,4 +85,17 @@ interface HumanosApiService {
     suspend fun getPerson(
         @Header("Authorization") bridgeBearer: String,
     ): PersonEnvelope
+
+    /**
+     * Fetch the signed-in founder's mobile ↔ Claude bridge thread (ADR-0006 /
+     * TASK-027). With the session/bridge-JWT auth the server returns *this*
+     * user's thread; `since` (ISO-8601) filters to messages created after that
+     * instant so the background poller only sees what is new. Used by
+     * `AgentReplyPollWorker` to detect fresh "assistant" replies.
+     */
+    @GET("mobile/message")
+    suspend fun getMessages(
+        @Header("Authorization") bridgeBearer: String,
+        @Query("since") since: String? = null,
+    ): MessagesEnvelope
 }

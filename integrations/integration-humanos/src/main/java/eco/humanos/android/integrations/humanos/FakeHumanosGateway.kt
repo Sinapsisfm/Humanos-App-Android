@@ -201,6 +201,28 @@ class FakeHumanosGateway @Inject constructor() : HumanosGateway {
         )
     }
 
+    override suspend fun fetchMessages(sinceIso: String?): Result<List<AgentMessage>> {
+        delay(SIMULATED_LATENCY_MS)
+        // A short fake thread ending in an agent reply, so the poller path can be
+        // exercised offline. `sinceIso` is ignored by the fake.
+        return Result.success(
+            listOf(
+                AgentMessage(
+                    id = "msg-001",
+                    role = "user",
+                    content = "Recordame revisar el contrato de Talca",
+                    createdAtIso = "2026-06-08T08:00:00.000Z",
+                ),
+                AgentMessage(
+                    id = "msg-002",
+                    role = "assistant",
+                    content = "Listo, te dejo el recordatorio para hoy a las 18:00.",
+                    createdAtIso = "2026-06-08T08:00:05.000Z",
+                ),
+            ),
+        )
+    }
+
     override suspend fun checkConnectivity(): Boolean {
         delay(SIMULATED_LATENCY_MS / 2)
         return true

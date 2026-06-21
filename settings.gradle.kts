@@ -42,6 +42,7 @@ include(":core:core-security")
 include(":core:core-ui")
 include(":core:core-observability")
 include(":core:core-update")
+include(":core:core-notifications")
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 include(":data:data-auth")

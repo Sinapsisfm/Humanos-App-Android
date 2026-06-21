@@ -2,6 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Local notifications for new agent replies (AgentReplyPollWorker). On
+         API 33+ this is a runtime permission requested in MainActivity; on
+         API 26-32 it is granted at install time. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Update the app from the phone: download the release APK and launch the
          system installer (no PC / sideload transfer). Android prompts the user
          to allow "install unknown apps" the first time. -->

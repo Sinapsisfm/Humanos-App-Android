@@ -60,6 +60,7 @@ dependencies {
     implementation(project(":core:core-ui"))
     implementation(project(":core:core-model"))
     implementation(project(":core:core-observability"))
+    implementation(project(":core:core-notifications"))
 
     // Integration modules (Hilt modules must be visible at app level)
     implementation(project(":integrations:integration-humanos"))
