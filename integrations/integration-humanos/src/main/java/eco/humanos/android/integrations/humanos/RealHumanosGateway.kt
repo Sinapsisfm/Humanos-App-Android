@@ -103,6 +103,18 @@ class RealHumanosGateway @Inject constructor(
             api.getPerson(requireBridgeBearer()).person
         }
 
+    override suspend fun fetchMessages(sinceIso: String?): Result<List<AgentMessage>> =
+        runCatching {
+            api.getMessages(requireBridgeBearer(), sinceIso).messages.map {
+                AgentMessage(
+                    id = it.id,
+                    role = it.role,
+                    content = it.content,
+                    createdAtIso = it.createdAt,
+                )
+            }
+        }
+
     override suspend fun checkConnectivity(): Boolean =
         runCatching {
             // An authenticated profile fetch doubles as a lightweight ping.

@@ -55,8 +55,32 @@ interface HumanosGateway {
     /** Fetch the signed-in user's HumanOS profile. */
     suspend fun fetchPerson(): Result<PersonDto>
 
+    /**
+     * Fetch the founder's mobile ↔ Claude bridge thread, ordered oldest-first.
+     * When [sinceIso] (an ISO-8601 instant) is non-null, only messages created
+     * strictly after it are returned. Used by the background poller to detect
+     * new agent ("assistant") replies.
+     */
+    suspend fun fetchMessages(sinceIso: String? = null): Result<List<AgentMessage>>
+
     /** Quick authenticated connectivity check. */
     suspend fun checkConnectivity(): Boolean
+}
+
+/**
+ * A single message in the mobile ↔ Claude bridge thread, mapped from the
+ * server's `ConversationMessage`. `createdAtIso` is the raw ISO-8601 string so
+ * callers can both display it and use it as the `since` cursor on the next poll
+ * without lossy epoch conversion.
+ */
+data class AgentMessage(
+    val id: String,
+    val role: String,
+    val content: String,
+    val createdAtIso: String?,
+) {
+    /** True when this message was written by the Claude agent (not Felipe). */
+    val isFromAgent: Boolean get() = role.equals("assistant", ignoreCase = true)
 }
 
 /**

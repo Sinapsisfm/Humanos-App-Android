@@ -12,6 +12,7 @@ import eco.humanos.android.core.model.task.TaskItem
 import eco.humanos.android.core.model.task.TaskPriority
 import eco.humanos.android.core.model.task.TaskStatus
 import eco.humanos.android.core.observability.TraceRepository
+import eco.humanos.android.integrations.humanos.AgentMessage
 import eco.humanos.android.integrations.humanos.DailyReviewDto
 import eco.humanos.android.integrations.humanos.HumanosGateway
 import eco.humanos.android.integrations.humanos.dto.CheckInDto
@@ -97,6 +98,9 @@ class TaskRepositoryImplTest {
         ): Result<CheckInDto> = error("not used in these tests")
 
         override suspend fun fetchPerson(): Result<PersonDto> =
+            error("not used in these tests")
+
+        override suspend fun fetchMessages(sinceIso: String?): Result<List<AgentMessage>> =
             error("not used in these tests")
 
         override suspend fun checkConnectivity(): Boolean = true

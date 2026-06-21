@@ -12,6 +12,7 @@ import eco.humanos.android.core.update.UpdateChecker
 import eco.humanos.android.core.update.UpdateInfo
 import eco.humanos.android.data.auth.AuthRepository
 import eco.humanos.android.data.auth.GoogleCredentialManager
+import eco.humanos.android.integrations.humanos.AgentMessage
 import eco.humanos.android.integrations.humanos.DailyReviewDto
 import eco.humanos.android.integrations.humanos.HumanosGateway
 import eco.humanos.android.integrations.humanos.dto.CheckInDto
@@ -81,6 +82,9 @@ class SettingsViewModelTest {
         ): Result<CheckInDto> = error("not used in these tests")
 
         override suspend fun fetchPerson(): Result<PersonDto> =
+            error("not used in these tests")
+
+        override suspend fun fetchMessages(sinceIso: String?): Result<List<AgentMessage>> =
             error("not used in these tests")
 
         override suspend fun checkConnectivity(): Boolean = connected
