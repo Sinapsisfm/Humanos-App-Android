@@ -9,12 +9,22 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.AndroidEntryPoint
 import eco.humanos.android.core.ui.theme.HumanosTheme
+import eco.humanos.android.integrations.humanos.HumanosGateway
 import eco.humanos.android.navigation.HumanosApp
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    // The HumanOS gateway, used to register this device's FCM token on startup so
+    // existing installs (where onNewToken won't fire) still get push targeting.
+    @Inject
+    lateinit var humanosGateway: HumanosGateway
 
     // Result is handled by the system; the AgentReplyNotifier checks the
     // permission at post time, so we only need to ask — no callback work.
@@ -25,10 +35,31 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         maybeRequestNotificationPermission()
+        registerFcmTokenBestEffort()
         setContent {
             HumanosTheme {
                 HumanosApp()
             }
+        }
+    }
+
+    /**
+     * Best-effort: fetch the current FCM token and register it with the backend.
+     * Covers existing installs where [HumanosMessagingService.onNewToken] won't
+     * fire again. If there is no HumanOS session yet the gateway call fails
+     * silently and [HumanosMessagingService] retries on the next refresh / start.
+     * Wrapped so a missing google-services.json or Firebase error never crashes.
+     */
+    private fun registerFcmTokenBestEffort() {
+        try {
+            FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+                if (token.isNullOrBlank()) return@addOnSuccessListener
+                lifecycleScope.launch {
+                    runCatching { humanosGateway.registerFcmToken(token) }
+                }
+            }
+        } catch (_: Exception) {
+            // Firebase unavailable (e.g. no google-services.json) — ignore.
         }
     }
 

@@ -6,6 +6,7 @@ import eco.humanos.android.core.model.task.TaskPriority
 import eco.humanos.android.integrations.humanos.dto.CheckInDto
 import eco.humanos.android.integrations.humanos.dto.CheckInsEnvelope
 import eco.humanos.android.integrations.humanos.dto.CreateCheckInDto
+import eco.humanos.android.integrations.humanos.dto.FcmTokenRequest
 import eco.humanos.android.integrations.humanos.dto.MobileSnapshotDto
 import eco.humanos.android.integrations.humanos.dto.PersonDto
 import eco.humanos.android.integrations.humanos.dto.UpdateTaskDto
@@ -113,6 +114,12 @@ class RealHumanosGateway @Inject constructor(
                     createdAtIso = it.createdAt,
                 )
             }
+        }
+
+    override suspend fun registerFcmToken(token: String): Result<Unit> =
+        runCatching {
+            api.registerFcmToken(requireBridgeBearer(), FcmTokenRequest(token))
+            Unit
         }
 
     override suspend fun checkConnectivity(): Boolean =

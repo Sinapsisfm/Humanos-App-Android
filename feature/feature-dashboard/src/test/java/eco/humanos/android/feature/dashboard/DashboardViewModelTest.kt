@@ -82,6 +82,7 @@ class DashboardViewModelTest {
         override suspend fun fetchPerson(): Result<PersonDto> = Result.success(PersonDto(id = "p1"))
         override suspend fun fetchMessages(sinceIso: String?): Result<List<AgentMessage>> =
             Result.success(emptyList())
+        override suspend fun registerFcmToken(token: String): Result<Unit> = Result.success(Unit)
         override suspend fun checkConnectivity(): Boolean = true
     }
 

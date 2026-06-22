@@ -223,6 +223,11 @@ class FakeHumanosGateway @Inject constructor() : HumanosGateway {
         )
     }
 
+    override suspend fun registerFcmToken(token: String): Result<Unit> {
+        delay(SIMULATED_LATENCY_MS / 2)
+        return Result.success(Unit)
+    }
+
     override suspend fun checkConnectivity(): Boolean {
         delay(SIMULATED_LATENCY_MS / 2)
         return true

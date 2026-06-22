@@ -29,6 +29,17 @@
             </intent-filter>
         </activity>
 
+        <!-- Firebase Cloud Messaging service. Fires onMessageReceived in the
+             foreground; backgrounded/killed pushes are shown by the system tray
+             via the message's `notification` block (channel "agent_messages"). -->
+        <service
+            android:name="eco.humanos.android.core.notifications.HumanosMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
         <!-- Grants the system installer temporary read access to the downloaded
              APK (see ApkInstaller). Authority matches "${applicationId}.fileprovider". -->
         <provider

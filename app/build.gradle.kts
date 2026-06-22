@@ -123,6 +123,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.analytics)
+    implementation(libs.firebase.messaging)
 
     // Icons (extended set for navigation icons)
     implementation(libs.androidx.compose.material.icons.extended)

@@ -87,6 +87,9 @@ class SettingsViewModelTest {
         override suspend fun fetchMessages(sinceIso: String?): Result<List<AgentMessage>> =
             error("not used in these tests")
 
+        override suspend fun registerFcmToken(token: String): Result<Unit> =
+            error("not used in these tests")
+
         override suspend fun checkConnectivity(): Boolean = connected
     }
 

@@ -63,6 +63,14 @@ interface HumanosGateway {
      */
     suspend fun fetchMessages(sinceIso: String? = null): Result<List<AgentMessage>>
 
+    /**
+     * Register this device's Firebase Cloud Messaging [token] with the backend so
+     * it can target this install with push notifications. Best-effort: fails with
+     * `Result.failure` when there is no HumanOS session yet (caller retries on the
+     * next token refresh / app start).
+     */
+    suspend fun registerFcmToken(token: String): Result<Unit>
+
     /** Quick authenticated connectivity check. */
     suspend fun checkConnectivity(): Boolean
 }

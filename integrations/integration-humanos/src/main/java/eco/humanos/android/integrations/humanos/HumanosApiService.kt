@@ -1,9 +1,11 @@
 package eco.humanos.android.integrations.humanos
 
+import eco.humanos.android.integrations.humanos.dto.AckResponse
 import eco.humanos.android.integrations.humanos.dto.CheckInEnvelope
 import eco.humanos.android.integrations.humanos.dto.CheckInsEnvelope
 import eco.humanos.android.integrations.humanos.dto.CreateCheckInDto
 import eco.humanos.android.integrations.humanos.dto.CreateTaskDto
+import eco.humanos.android.integrations.humanos.dto.FcmTokenRequest
 import eco.humanos.android.integrations.humanos.dto.MessagesEnvelope
 import eco.humanos.android.integrations.humanos.dto.MobileExchangeResponse
 import eco.humanos.android.integrations.humanos.dto.PersonEnvelope
@@ -98,4 +100,15 @@ interface HumanosApiService {
         @Header("Authorization") bridgeBearer: String,
         @Query("since") since: String? = null,
     ): MessagesEnvelope
+
+    /**
+     * Register (upsert) this device's Firebase Cloud Messaging token so the
+     * backend can push agent replies. Idempotent server-side; returns
+     * `{ "ok": true }`.
+     */
+    @POST("mobile/fcm-token")
+    suspend fun registerFcmToken(
+        @Header("Authorization") bridgeBearer: String,
+        @Body body: FcmTokenRequest,
+    ): AckResponse
 }
