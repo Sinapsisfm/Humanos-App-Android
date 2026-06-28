@@ -4,6 +4,9 @@ plugins {
 
 android {
     namespace = "eco.humanos.android.feature.outdoor"
+    defaultConfig {
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
@@ -24,4 +27,12 @@ dependencies {
     testImplementation(libs.androidx.compose.ui.test.manifest)
     testImplementation("org.robolectric:robolectric:4.14.1")
     testImplementation(libs.androidx.test.core)
+
+    // Instrumented (emulador/dispositivo): render Compose on-device.
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.truth)
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
