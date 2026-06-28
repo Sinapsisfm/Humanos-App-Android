@@ -10,6 +10,21 @@ package eco.humanos.android.core.maps
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 
+/**
+ * Códec único de snapshot (paridad cross-adapter): el blob producido por CUALQUIER
+ * implementación de MapRepository es restaurable en cualquier otra (in-memory ↔ Room).
+ * Mismo principio que OutdoorSnapshotCodec.
+ */
+@Serializable
+data class MapSnapshot(val packs: List<OfflineMapPack>, val routes: List<RouteGeometry>)
+
+object MapSnapshotCodec {
+    fun encode(repo: MapRepository): String =
+        MapJson.encodeToString(MapSnapshot(repo.packs(), repo.routes()))
+
+    fun decode(snapshot: String): MapSnapshot = MapJson.decodeFromString(snapshot)
+}
+
 interface MapRepository {
     /** Guarda/actualiza un pack offline (idempotente por packId). */
     fun savePack(pack: OfflineMapPack)
@@ -29,9 +44,6 @@ interface MapRepository {
     fun serialize(): String
 }
 
-@Serializable
-private data class MapSnapshot(val packs: List<OfflineMapPack>, val routes: List<RouteGeometry>)
-
 class InMemoryMapRepository : MapRepository {
     private val packsById = LinkedHashMap<String, OfflineMapPack>()
     private val routesById = LinkedHashMap<String, RouteGeometry>()
@@ -47,13 +59,12 @@ class InMemoryMapRepository : MapRepository {
 
     override fun coverage(): MapCoverage = MapCoverage(packsById.values.map { it.manifest.region })
 
-    override fun serialize(): String =
-        MapJson.encodeToString(MapSnapshot(packs(), routes()))
+    override fun serialize(): String = MapSnapshotCodec.encode(this)
 
     companion object {
         /** Restaura desde un snapshot serializado (process death). */
         fun restore(snapshot: String): InMemoryMapRepository {
-            val data = MapJson.decodeFromString<MapSnapshot>(snapshot)
+            val data = MapSnapshotCodec.decode(snapshot)
             val repo = InMemoryMapRepository()
             data.packs.forEach(repo::savePack)
             data.routes.forEach(repo::saveRoute)

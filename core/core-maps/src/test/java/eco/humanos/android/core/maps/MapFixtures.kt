@@ -74,4 +74,18 @@ object MapFixtures {
           <trkpt lat="oops" lon="-72.30"><ele>1.0</ele></trkpt>
         </trkseg></trk></gpx>
     """.trimIndent()
+
+    /** GPX BIEN FORMADO pero con lat fuera de rango (99) → fail-closed por validación. */
+    val GPX_OUT_OF_RANGE = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <gpx version="1.1"><trk><trkseg>
+          <trkpt lat="99.0" lon="-72.30"><ele>1.0</ele></trkpt>
+        </trkseg></trk></gpx>
+    """.trimIndent()
+
+    /** Track sintético con provenance completa (datum/precisión/origen/tiempo inyectados). */
+    val TRACK_WITH_PROVENANCE = listOf(
+        TrackPoint(-41.10, -72.30, 120.0, "2026-01-01T08:00:00Z", Datum.WGS84, 5.0, 8.0, PositionSource.SYNTHETIC),
+        TrackPoint(-41.11, -72.305, 130.0, "2026-01-01T08:30:00Z", Datum.WGS84, 4.0, 7.0, PositionSource.SYNTHETIC),
+    )
 }
