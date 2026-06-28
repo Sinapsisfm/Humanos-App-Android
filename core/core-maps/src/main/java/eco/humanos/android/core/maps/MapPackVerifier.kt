@@ -19,13 +19,19 @@ import java.security.MessageDigest
 private data class PackContent(val routes: List<RouteGeometry>, val waypoints: List<Waypoint>)
 
 /**
- * Carga AUTENTICADA por el digest del manifiesto: incluye los campos inmutables de
- * cabecera (packId/version/schema/createdAt/region/datum) + el contenido. Así una
+ * Carga cubierta por el digest de INTEGRIDAD del manifiesto: incluye los campos inmutables
+ * de cabecera (packId/version/schema/createdAt/region/datum) + el contenido. Así una
  * manipulación de la metadata del manifiesto (p.ej. region o datum) también rompe el hash,
  * no solo cambios en rutas/waypoints. NO incluye contentHash/sizeBytes (evita ciclo).
+ *
+ * IMPORTANTE (integridad ≠ autenticidad): este sha256 detecta corrupción/manipulación
+ * accidental y comprueba consistencia, pero NO prueba el origen: un atacante puede recomputar
+ * el hash tras alterar el pack. La AUTENTICIDAD (origen verificable, anti-rollback, confianza
+ * en el firmante) requiere FIRMA criptográfica → ver SignedPackMetadata / requisito
+ * MAP_PACK_SIGNED_METADATA. El digest de integridad sigue siendo útil bajo una firma.
  */
 @Serializable
-private data class AuthPayload(
+private data class IntegrityPayload(
     val packId: String,
     val version: String,
     val schemaVersion: Int,
@@ -55,12 +61,12 @@ object MapPackVerifier {
     private fun sha256Hex(bytes: ByteArray): String =
         MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
 
-    /** Digest AUTENTICADO (cabecera inmutable + contenido) que va en el manifiesto. */
-    private fun authDigest(
+    /** Digest de INTEGRIDAD (cabecera inmutable + contenido) que va en el manifiesto. */
+    private fun integrityDigest(
         packId: String, version: String, schemaVersion: Int, createdAt: String,
         region: MapRegion, datum: Datum, routes: List<RouteGeometry>, waypoints: List<Waypoint>,
     ): String {
-        val payload = AuthPayload(packId, version, schemaVersion, createdAt, region, datum, routes, waypoints)
+        val payload = IntegrityPayload(packId, version, schemaVersion, createdAt, region, datum, routes, waypoints)
         return sha256Hex(MapJson.encodeToString(payload).toByteArray(Charsets.UTF_8))
     }
 
@@ -88,8 +94,8 @@ object MapPackVerifier {
             createdAt = createdAt,
             region = region,
             datum = datum,
-            // digest autenticado: cabecera (region/datum/version/...) + contenido
-            contentHash = authDigest(packId, version, MAPS_SCHEMA_VERSION, createdAt, region, datum, routes, waypoints),
+            // digest de INTEGRIDAD (no autenticidad): cabecera (region/datum/version/...) + contenido
+            contentHash = integrityDigest(packId, version, MAPS_SCHEMA_VERSION, createdAt, region, datum, routes, waypoints),
             sizeBytes = bytes.size.toLong(),
         )
         return OfflineMapPack(manifest = manifest, routes = routes, waypoints = waypoints)
@@ -111,7 +117,7 @@ object MapPackVerifier {
             return PackVerification.SizeMismatch(pack.manifest.sizeBytes, bytes.size.toLong())
         }
         val m = pack.manifest
-        val actual = authDigest(m.packId, m.version, m.schemaVersion, m.createdAt, m.region, m.datum, pack.routes, pack.waypoints)
+        val actual = integrityDigest(m.packId, m.version, m.schemaVersion, m.createdAt, m.region, m.datum, pack.routes, pack.waypoints)
         if (actual != m.contentHash) {
             return PackVerification.Corrupt(m.contentHash, actual)
         }
