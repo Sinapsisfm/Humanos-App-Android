@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Science
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.SystemUpdate
@@ -52,6 +54,9 @@ import eco.humanos.android.core.update.UpdateInfo
 fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
     modifier: Modifier = Modifier,
+    // Entrada de laboratorio (debug-only). El host la provee solo cuando el flag
+    // OUTDOOR_R1_ENABLED está activo; null por defecto → invisible en release.
+    onOpenOutdoor: (() -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -144,6 +149,18 @@ fun SettingsScreen(
                     Icon(Icons.Outlined.Security, contentDescription = null)
                 },
             )
+        }
+        onOpenOutdoor?.let { open ->
+            item {
+                ListItem(
+                    modifier = Modifier.clickable { open() },
+                    headlineContent = { Text("Outdoor R1 (laboratorio)") },
+                    supportingContent = { Text("Vista previa interna · camping offline") },
+                    leadingContent = {
+                        Icon(Icons.Outlined.Science, contentDescription = null)
+                    },
+                )
+            }
         }
         item {
             HorizontalDivider()

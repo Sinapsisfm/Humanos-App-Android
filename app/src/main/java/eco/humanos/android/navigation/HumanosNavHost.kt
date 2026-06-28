@@ -5,8 +5,10 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import eco.humanos.android.BuildConfig
 import eco.humanos.android.feature.capture.CaptureScreen
 import eco.humanos.android.feature.dashboard.DashboardScreen
+import eco.humanos.android.feature.outdoor.OutdoorPackingRoute
 import eco.humanos.android.feature.settings.SettingsScreen
 import eco.humanos.android.feature.tasks.TasksScreen
 import eco.humanos.android.feature.web.WebModulesScreen
@@ -62,7 +64,21 @@ fun HumanosNavHost(
             )
         }
         composable(TopLevelDestination.SETTINGS.route) {
-            SettingsScreen()
+            // Entrada de laboratorio Outdoor solo cuando el flag está activo (debug).
+            SettingsScreen(
+                onOpenOutdoor = if (BuildConfig.OUTDOOR_R1_ENABLED) {
+                    { navController.navigate("outdoor") }
+                } else {
+                    null
+                },
+            )
+        }
+        // Outdoor R1: ruta registrada SOLO con el flag activo (debug). En release el
+        // flag es false → la ruta no existe → inaccesible para usuarios finales.
+        if (BuildConfig.OUTDOOR_R1_ENABLED) {
+            composable("outdoor") {
+                OutdoorPackingRoute()
+            }
         }
     }
 }

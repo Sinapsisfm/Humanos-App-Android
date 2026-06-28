@@ -43,11 +43,13 @@ include(":core:core-ui")
 include(":core:core-observability")
 include(":core:core-update")
 include(":core:core-notifications")
+include(":core:core-outdoor")
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 include(":data:data-auth")
 include(":data:data-capture")
 include(":data:data-tasks")
+include(":data:data-outdoor")
 
 // ── Feature ──────────────────────────────────────────────────────────────────
 include(":feature:feature-dashboard")
@@ -55,6 +57,7 @@ include(":feature:feature-capture")
 include(":feature:feature-settings")
 include(":feature:feature-tasks")
 include(":feature:feature-web")
+include(":feature:feature-outdoor")
 
 // ── Integrations ─────────────────────────────────────────────────────────────
 include(":integrations:integration-humanos")

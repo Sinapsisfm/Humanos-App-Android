@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuite name="eco.humanos.android.data.outdoor.OutdoorDaoInstrumentedTest" tests="2" failures="0" errors="0" skipped="0" time="0.956" timestamp="2026-06-28T09:37:46" hostname="localhost">
+  <properties>
+    <property name="device" value="HumanOS_Outdoor_Test_API_34(AVD) - 14" />
+    <property name="flavor" value="" />
+    <property name="project" value=":data:data-outdoor" />
+  </properties>
+  <testcase name="appendEvent_isIdempotent" classname="eco.humanos.android.data.outdoor.OutdoorDaoInstrumentedTest" time="0.126" />
+  <testcase name="outing_and_plan_persist_and_read" classname="eco.humanos.android.data.outdoor.OutdoorDaoInstrumentedTest" time="0.1" />
+</testsuite>
