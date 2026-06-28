@@ -157,6 +157,63 @@ class SignedMetadataTest {
         assertThat(a).isEqualTo(b)
     }
 
+    // ── fixes del review cripto (4 MEDIUM) ──
+    @Test fun no_expiry_is_valid_even_far_future_now() {
+        // expiresAt=null → la verificación de vigencia se omite genuinamente
+        assertThat(verify(signed(base.copy(expiresAt = null)), now = "2031-01-01T00:00:00Z"))
+            .isEqualTo(SignedVerification.Valid)
+    }
+
+    @Test fun malformed_now_with_offset_fails_closed() {
+        assertThat(verify(signed(), now = "2026-06-28T00:00:00-04:00"))
+            .isInstanceOf(SignedVerification.InvalidMetadata::class.java)
+    }
+
+    @Test fun issued_at_with_offset_is_invalid_metadata() {
+        assertThat(verify(signed(base.copy(issuedAt = "2026-01-01T00:00:00-04:00"))))
+            .isInstanceOf(SignedVerification.InvalidMetadata::class.java)
+    }
+
+    @Test fun bad_license_hash_is_invalid_metadata() {
+        assertThat(verify(signed().let { it.copy(metadata = it.metadata.copy(licenseManifestHash = "xyz")) }))
+            .isInstanceOf(SignedVerification.InvalidMetadata::class.java)
+    }
+
+    @Test fun blank_pack_id_is_invalid_metadata() {
+        assertThat(verify(signed().let { it.copy(metadata = it.metadata.copy(packId = "")) }))
+            .isInstanceOf(SignedVerification.InvalidMetadata::class.java)
+    }
+
+    @Test fun expiry_before_issued_is_invalid_metadata() {
+        assertThat(verify(signed(base.copy(issuedAt = "2026-06-01T00:00:00Z", expiresAt = "2026-01-01T00:00:00Z"))))
+            .isInstanceOf(SignedVerification.InvalidMetadata::class.java)
+    }
+
+    @Test fun bad_file_sha256_is_invalid_metadata() {
+        assertThat(verify(signed(base.copy(files = listOf(SignedFileEntry("a", 1, "nothex"))))))
+            .isInstanceOf(SignedVerification.InvalidMetadata::class.java)
+    }
+
+    @Test fun content_hash_binding_mismatch_detected() {
+        // firma válida pero manifestHash firmado != hash real on-disk → ContentHashMismatch
+        val r = SignedMetadataVerifier.verify(
+            signed(), store, "2026-06-28T00:00:00Z", SemVer(1, 5, 0), "stable",
+            actualFiles = goodFiles(), actualManifestHash = "9".repeat(64),
+        )
+        assertThat(r).isEqualTo(SignedVerification.ContentHashMismatch("manifest"))
+    }
+
+    @Test fun content_hash_binding_match_is_valid() {
+        assertThat(SignedMetadataVerifier.verify(signed(), store, "2026-06-28T00:00:00Z", SemVer(1,5,0), "stable",
+            actualFiles = goodFiles(), actualManifestHash = MANIFEST_H, actualLicenseManifestHash = LICENSE_H))
+            .isEqualTo(SignedVerification.Valid)
+    }
+
+    @Test fun previous_version_not_before_pack_is_rollback() {
+        assertThat(verify(signed(base.copy(previousVersion = SemVer(1, 2, 0))))) // == packVersion → inconsistente
+            .isEqualTo(SignedVerification.RollbackDetected)
+    }
+
     @Test fun semver_compare_and_parse() {
         assertThat(SemVer.parseOrNull("1.2.3")).isEqualTo(SemVer(1, 2, 3))
         assertThat(SemVer.parseOrNull("1.2")).isNull()

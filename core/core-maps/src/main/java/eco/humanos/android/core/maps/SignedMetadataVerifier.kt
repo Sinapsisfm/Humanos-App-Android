@@ -12,7 +12,17 @@ package eco.humanos.android.core.maps
 object SignedMetadataVerifier {
 
     private val HEX64 = Regex("^[0-9a-f]{64}$")
+    /** ISO-8601 UTC estricto (sufijo Z, sin offset/fracción) → comparación lexicográfica == cronológica. */
+    private val ISO_UTC = Regex("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$")
 
+    /**
+     * Verifica autenticidad/integridad de la metadata firmada (fail-closed).
+     *
+     * SEAM autenticidad↔integridad: `manifestHash`/`licenseManifestHash` van FIRMADOS aquí, pero
+     * para cerrar el seam el llamador DEBE pasar los hashes REALES del contenido on-disk
+     * (`actualManifestHash`/`actualLicenseManifestHash`); si difieren → ContentHashMismatch. Si no
+     * se pasan, esa verificación queda como responsabilidad explícita del call-site.
+     */
     fun verify(
         signed: SignedPackMetadata,
         trustStore: TrustStore,
@@ -22,8 +32,13 @@ object SignedMetadataVerifier {
         lastAcceptedVersion: SemVer? = null,
         lastAcceptedManifestHash: String? = null,
         actualFiles: Map<String, FileFingerprint> = emptyMap(),
+        actualManifestHash: String? = null,
+        actualLicenseManifestHash: String? = null,
     ): SignedVerification {
         val m = signed.metadata
+
+        // 0. `now` debe ser ISO-8601 UTC estricto (sin esto la comparación de vigencia no es fiable)
+        if (!ISO_UTC.matches(now)) return SignedVerification.InvalidMetadata("now no es ISO-8601 UTC: $now")
 
         // 1. estructura (malformado → fail-closed)
         structuralError(m)?.let { return SignedVerification.InvalidMetadata(it) }
@@ -60,6 +75,10 @@ object SignedMetadataVerifier {
         // 8. anti-rollback: piso efectivo = max(rollbackFloor, última aceptada)
         val effectiveFloor = listOfNotNull(m.rollbackFloor, lastAcceptedVersion).max()
         if (m.packVersion < effectiveFloor) return SignedVerification.RollbackDetected
+        // previousVersion declarada debe ser estrictamente anterior (consistencia de cadena)
+        if (m.previousVersion != null && m.packVersion <= m.previousVersion) {
+            return SignedVerification.RollbackDetected
+        }
         // misma versión con contenido distinto al ya aceptado → sospechoso, rechazar
         if (lastAcceptedVersion != null && m.packVersion.compareTo(lastAcceptedVersion) == 0 &&
             lastAcceptedManifestHash != null && lastAcceptedManifestHash != m.manifestHash
@@ -67,7 +86,15 @@ object SignedMetadataVerifier {
             return SignedVerification.RollbackDetected
         }
 
-        // 9. archivos: ausencia / tamaño o hash incorrecto (la firma garantiza la lista esperada)
+        // 9. seam integridad: el hash FIRMADO debe coincidir con el contenido real (si el caller lo provee)
+        if (actualManifestHash != null && actualManifestHash != m.manifestHash) {
+            return SignedVerification.ContentHashMismatch("manifest")
+        }
+        if (actualLicenseManifestHash != null && actualLicenseManifestHash != m.licenseManifestHash) {
+            return SignedVerification.ContentHashMismatch("license")
+        }
+
+        // 10. archivos: ausencia / tamaño o hash incorrecto (la firma garantiza la lista esperada)
         for (f in m.files) {
             val actual = actualFiles[f.path] ?: return SignedVerification.MissingFile(f.path)
             if (actual.size != f.size || actual.sha256 != f.sha256) return SignedVerification.CorruptFile(f.path)
@@ -81,7 +108,8 @@ object SignedMetadataVerifier {
         if (m.packId.isBlank()) return "packId vacío"
         if (m.signerKeyId.isBlank()) return "signerKeyId vacío"
         if (m.channel.isBlank()) return "channel vacío"
-        if (m.issuedAt.isBlank()) return "issuedAt vacío"
+        if (!ISO_UTC.matches(m.issuedAt)) return "issuedAt no es ISO-8601 UTC: ${m.issuedAt}"
+        if (m.expiresAt != null && !ISO_UTC.matches(m.expiresAt)) return "expiresAt no es ISO-8601 UTC: ${m.expiresAt}"
         if (m.territory.isBlank()) return "territory vacío"
         if (m.contentType.isBlank()) return "contentType vacío"
         if (!HEX64.matches(m.manifestHash)) return "manifestHash no es sha256 hex"

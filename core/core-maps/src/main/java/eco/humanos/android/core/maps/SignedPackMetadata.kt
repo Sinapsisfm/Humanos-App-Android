@@ -90,5 +90,7 @@ sealed interface SignedVerification {
     data object ChannelMismatch : SignedVerification
     data class CorruptFile(val path: String) : SignedVerification
     data class MissingFile(val path: String) : SignedVerification
+    /** Firma válida pero el hash firmado NO coincide con el contenido real (seam integridad↔autenticidad). */
+    data class ContentHashMismatch(val field: String) : SignedVerification
     data class InvalidMetadata(val reason: String) : SignedVerification
 }
