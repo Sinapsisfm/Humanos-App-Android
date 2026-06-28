@@ -59,8 +59,8 @@ class OutdoorService(
         val plan = PackingEngine.buildCampingPlan(input)
         repo.putOuting(outing)
         repo.putPlan(id, plan)
-        repo.appendEvent(event(id, "create", OutingEventType.OUTING_CREATED, SourceType.USER_DECLARATION, now))
-        repo.appendEvent(event(id, "plan", OutingEventType.PACKING_GENERATED, SourceType.DETERMINISTIC_INFERENCE, now))
+        emit(id, "create", OutingEventType.OUTING_CREATED, SourceType.USER_DECLARATION, now)
+        emit(id, "plan", OutingEventType.PACKING_GENERATED, SourceType.DETERMINISTIC_INFERENCE, now)
         return view(outing, plan)
     }
 
@@ -75,7 +75,7 @@ class OutdoorService(
         val updated = outing.copy(updatedAt = now)
         repo.putOuting(updated)
         repo.putPlan(outingId, newPlan)
-        repo.appendEvent(event(outingId, "edit:${editKey(edits)}", OutingEventType.PACKING_ITEM_EDITED, SourceType.USER_DECLARATION, now))
+        emit(outingId, "edit:${editKey(edits)}", OutingEventType.PACKING_ITEM_EDITED, SourceType.USER_DECLARATION, now)
         return view(updated, newPlan)
     }
 
@@ -85,7 +85,7 @@ class OutdoorService(
         val plan = PackingEngine.buildCampingPlan(outing.input)
         val now = clock.nowIso()
         repo.putPlan(outingId, plan)
-        repo.appendEvent(event(outingId, "regen:$now", OutingEventType.PACKING_GENERATED, SourceType.DETERMINISTIC_INFERENCE, now))
+        emit(outingId, "regen", OutingEventType.PACKING_GENERATED, SourceType.DETERMINISTIC_INFERENCE, now)
         return view(outing, plan)
     }
 
@@ -109,12 +109,21 @@ class OutdoorService(
     private fun editKey(edits: List<PackingEngine.UserEdit>): String =
         edits.joinToString(",") { it::class.simpleName ?: "edit" }
 
-    private fun event(outingId: String, suffix: String, type: OutingEventType, source: SourceType, at: String) =
-        OutingEvent(
-            eventId = "$outingId:$suffix:$at",
-            outingId = outingId,
-            type = type,
-            sourceType = source,
-            at = at,
+    /**
+     * Emite un evento con `eventId` ÚNICO: incluye una secuencia por salida además del
+     * timestamp, de modo que dos operaciones del mismo tipo en el mismo instante no
+     * colisionen (no se pierde ningún evento de la bitácora).
+     */
+    private fun emit(outingId: String, tag: String, type: OutingEventType, source: SourceType, at: String) {
+        val seq = repo.getEvents(outingId).size
+        repo.appendEvent(
+            OutingEvent(
+                eventId = "$outingId:$tag:$at:$seq",
+                outingId = outingId,
+                type = type,
+                sourceType = source,
+                at = at,
+            ),
         )
+    }
 }

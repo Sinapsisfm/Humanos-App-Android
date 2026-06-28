@@ -62,6 +62,17 @@ class OutdoorServiceTest {
         assertThat(restored.getEvents("o1")).hasSize(2)
     }
 
+    @Test fun `dos ediciones distintas en el mismo instante no pierden eventos (MED-1)`() {
+        val (svc, repo) = service()
+        svc.createCampingOuting("o1", "C", Fixtures.packingInput()) // reloj fijo
+        svc.applyEdits("o1", listOf(PackingEngine.UserEdit.SetPacked("safety.first_aid", true)))
+        svc.applyEdits("o1", listOf(PackingEngine.UserEdit.SetBought("food.rations", true)))
+        // ambas ediciones (mismo `now`, mismo tipo de edit distinto contenido) quedan registradas
+        val edits = repo.getEvents("o1").filter { it.type.name == "PACKING_ITEM_EDITED" }
+        assertThat(edits).hasSize(2)
+        assertThat(edits.map { it.eventId }.toSet()).hasSize(2) // eventIds únicos
+    }
+
     @Test fun `operaciones sobre salida inexistente devuelven null`() {
         val (svc, _) = service()
         assertThat(svc.applyEdits("nope", emptyList())).isNull()

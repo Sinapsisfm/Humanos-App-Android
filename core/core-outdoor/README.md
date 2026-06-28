@@ -9,7 +9,7 @@ no se ve afectado.
 
 - `domain/` — modelo (OutdoorOuting, FacilityProfile, Participant con `ageClass` no fecha
   de nacimiento), eventos con `sourceType`, máquina de estados de salida.
-- `packing/` — ruleset versionado (`camping-cl.v0.1.0`) + `PackingEngine` determinístico:
+- `packing/` — ruleset versionado (`camping-cl.v0.2.0`) + `PackingEngine` determinístico:
   generación con trazabilidad (`sourceRuleId`), fusión coherente por key, diff, edición
   humana. Mismas entradas ⇒ misma salida (sin reloj ni azar).
 - `repository/` — `OutdoorRepository` (contrato) + `InMemoryOutdoorRepository`
@@ -32,7 +32,7 @@ capacidades falsas, vocabulario sin "seguro" (no certifica seguridad).
 ./gradlew :core:core-outdoor:test
 ```
 
-22 tests (JUnit4 + Truth): determinismo, restore/idempotencia, no-duplicación, edición,
+45 tests (JUnit4 + Truth): determinismo, restore/idempotencia, no-duplicación, edición,
 awareness, estados.
 
 ## Próximo

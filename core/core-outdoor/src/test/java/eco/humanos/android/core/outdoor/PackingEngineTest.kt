@@ -67,6 +67,21 @@ class PackingEngineTest {
         assertThat(ab.explanation).isEqualTo("Botiquín ampliado por grupo numeroso.")
     }
 
+    @Test fun `fusion es coherente cuando el perdedor tiene mayor cantidad (MED-2)`() {
+        // Regla compartida más DÉBIL pero con MAYOR cantidad: no debe imponer su cantidad
+        // al ítem ganador (mandatory) → la cantidad mostrada corresponde al ganador.
+        val weakBig = PackingRule(
+            id = "safety.first_aid", category = PackingCategory.SAFETY,
+            classification = ItemClassification.RECOMMENDED, name = "Botiquín secundario", unit = "x",
+            applies = { true }, quantity = { 9 }, explain = { "secundario" },
+        )
+        val item = PackingEngine.generateItems(Fixtures.packingInput(), CAMPING_RULES + weakBig)
+            .first { it.key == "safety.first_aid" }
+        assertThat(item.classification).isEqualTo(ItemClassification.MANDATORY) // ganador
+        assertThat(item.quantity).isEqualTo(1) // cantidad del ganador, no el 9 del perdedor
+        assertThat(item.explanation).doesNotContain("secundario")
+    }
+
     @Test fun `sin agua potable agrega potabilizacion y sin refrigeracion agrega cooler`() {
         val noPotable = PackingEngine.generateItems(Fixtures.packingInput(facility = Fixtures.facility(potableWater = false)))
         assertThat(noPotable.any { it.key == "water.treatment" }).isTrue()

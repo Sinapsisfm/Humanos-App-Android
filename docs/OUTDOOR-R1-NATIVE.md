@@ -1,14 +1,14 @@
 # HumanOS Outdoor — vertical nativa R1 (camping offline)
 
 **Fecha:** 2026-06-27 · **Rama:** `feat/outdoor-camping-r1` (← `feat/fcm-push`) ·
-**Estado:** módulos construidos, **40 tests verdes**, AISLADO (no cableado a nav/app),
+**Estado:** módulos construidos, **48 tests verdes** (45 core + 3 feature), AISLADO (no cableado a nav/app),
 nada pusheado. Decisión de cablear/PR/merge = Felipe.
 
 ## Módulos agregados
 
 | Módulo | Tipo | Contenido | Tests |
 |---|---|---|---|
-| `:core:core-outdoor` | Kotlin/JVM puro (`humanos.kotlin.library`) | domain, packing engine determinístico, repo serializable, awareness, service, presentation, escenarios, lista de retorno | 37 |
+| `:core:core-outdoor` | Kotlin/JVM puro (`humanos.kotlin.library`) | domain, packing engine determinístico, repo serializable, awareness, service, presentation, escenarios, lista de retorno | 45 |
 | `:feature:feature-outdoor` | Android feature (`humanos.android.feature`) | `OutdoorPackingViewModel` (plano) + `OutdoorPackingScreen` (Compose stateless) | 3 |
 
 Único archivo preexistente modificado: `settings.gradle.kts` (2 `include` aditivos).
@@ -17,7 +17,7 @@ nada pusheado. Decisión de cablear/PR/merge = Felipe.
 
 ```bash
 export JAVA_HOME="C:\Program Files\Android\Android Studio\jbr"   # o el JBR local
-./gradlew :core:core-outdoor:test            # 37 verde
+./gradlew :core:core-outdoor:test            # 45 verde
 ./gradlew :feature:feature-outdoor:testDebugUnitTest   # 3 verde
 ```
 

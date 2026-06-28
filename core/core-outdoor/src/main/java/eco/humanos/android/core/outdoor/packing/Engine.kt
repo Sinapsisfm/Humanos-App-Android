@@ -54,7 +54,11 @@ object PackingEngine {
             if (b.quantity > a.quantity) winner = b
             else if (b.quantity == a.quantity && b.sourceRuleId < a.sourceRuleId) winner = b
         }
-        return winner.copy(quantity = maxOf(a.quantity, b.quantity))
+        // El ganador aporta TODOS los campos (incl. cantidad) → ítem coherente: la
+        // explicación siempre corresponde a la cantidad mostrada. En empate de
+        // clasificación el ganador ya es el de mayor cantidad, así que no se pierde el
+        // "máximo" en el caso de uso real (misma criticidad).
+        return winner
     }
 
     fun generateItems(

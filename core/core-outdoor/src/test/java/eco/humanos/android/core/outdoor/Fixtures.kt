@@ -13,6 +13,7 @@ import eco.humanos.android.core.outdoor.domain.PackingInput
 import eco.humanos.android.core.outdoor.domain.ParticipantRole
 import eco.humanos.android.core.outdoor.domain.ScenarioKind
 import eco.humanos.android.core.outdoor.domain.Season
+import eco.humanos.android.core.outdoor.packing.RULESET_VERSION
 
 /** Fixtures sintéticos NO sensibles (sin datos personales reales). */
 object Fixtures {
@@ -48,7 +49,7 @@ object Fixtures {
 
     fun outing(input: PackingInput = packingInput()) = OutdoorOuting(
         id = "outing-1", title = "Camping de prueba", intent = Intent.CAMPING_VACACIONES,
-        scenario = ScenarioKind.CAMPING, status = OutingStatus.DRAFT, rulesetVersion = "camping-cl.v0.1.0",
+        scenario = ScenarioKind.CAMPING, status = OutingStatus.DRAFT, rulesetVersion = RULESET_VERSION,
         input = input, createdAt = "2026-06-27T10:00:00.000Z", updatedAt = "2026-06-27T10:00:00.000Z",
     )
 }
