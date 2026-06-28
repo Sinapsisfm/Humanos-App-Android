@@ -10,6 +10,12 @@ android {
     defaultConfig {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 room {
@@ -30,6 +36,9 @@ dependencies {
     // Unit tests JVM (mappers puros).
     testImplementation(libs.junit)
     testImplementation(libs.truth)
+    // Robolectric: ejecuta Room (DAO/restore) en JVM sin emulador (evidencia Android real).
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation(libs.androidx.test.core)
 
     // Instrumented (PREPARADO, no ejecutado: requiere emulador/dispositivo).
     androidTestImplementation(libs.androidx.test.runner)
