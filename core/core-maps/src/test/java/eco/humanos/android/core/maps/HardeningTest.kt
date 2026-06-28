@@ -95,8 +95,8 @@ class HardeningTest {
         assertThat(MapPackVerifier.verify(over)).isInstanceOf(PackVerification.Invalid::class.java)
     }
 
-    // ── manifest autenticado por el digest (no solo el contenido) ──
-    @Test fun tampering_manifest_metadata_breaks_authenticated_digest() {
+    // ── manifest cubierto por el digest de INTEGRIDAD (no solo el contenido) ──
+    @Test fun tampering_manifest_metadata_breaks_integrity_digest() {
         val p = MapPackVerifier.buildPack(
             "p", "v", MapFixtures.SYNTHETIC_REGION, listOf(MapFixtures.ROUTE), MapFixtures.WAYPOINTS,
             "2026-01-01T00:00:00Z",
