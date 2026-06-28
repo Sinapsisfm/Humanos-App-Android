@@ -59,6 +59,53 @@ class HardeningTest {
         assertThat(MapPackVerifier.verify(tampered)).isInstanceOf(PackVerification.Invalid::class.java)
     }
 
+    @Test fun buildPack_rejects_invalid_waypoint() {
+        try {
+            MapPackVerifier.buildPack(
+                "p", "v", MapFixtures.SYNTHETIC_REGION, listOf(MapFixtures.ROUTE),
+                listOf(Waypoint("bad", "x", 99.0, 0.0)), "2026-01-01T00:00:00Z",
+            )
+            throw AssertionError("debió lanzar MapPackException")
+        } catch (e: MapPackException) {
+            assertThat(e.message).contains("waypoint inválido")
+        }
+    }
+
+    // ── límites de tamaño (fail-closed) ──
+    @Test fun route_exceeding_max_points_is_invalid() {
+        val tooMany = RouteGeometry("big", List(MAX_ROUTE_POINTS + 1) { GeoPoint(0.0, 0.0) })
+        assertThat(tooMany.isValid()).isFalse()
+    }
+
+    @Test fun buildPack_exceeding_max_routes_fails_closed() {
+        val many = List(MAX_PACK_ROUTES + 1) { RouteGeometry("r$it", listOf(GeoPoint(0.0, 0.0))) }
+        try {
+            MapPackVerifier.buildPack("p", "v", MapFixtures.SYNTHETIC_REGION, many, emptyList(), "2026-01-01T00:00:00Z")
+            throw AssertionError("debió lanzar MapPackException por MAX_PACK_ROUTES")
+        } catch (e: MapPackException) {
+            assertThat(e.message).contains("MAX_PACK_ROUTES")
+        }
+    }
+
+    @Test fun verify_flags_pack_over_max_routes() {
+        val good = MapPackVerifier.buildPack(
+            "p", "v", MapFixtures.SYNTHETIC_REGION, listOf(MapFixtures.ROUTE), emptyList(), "2026-01-01T00:00:00Z",
+        )
+        val over = good.copy(routes = List(MAX_PACK_ROUTES + 1) { RouteGeometry("r$it", listOf(GeoPoint(0.0, 0.0))) })
+        assertThat(MapPackVerifier.verify(over)).isInstanceOf(PackVerification.Invalid::class.java)
+    }
+
+    // ── manifest autenticado por el digest (no solo el contenido) ──
+    @Test fun tampering_manifest_metadata_breaks_authenticated_digest() {
+        val p = MapPackVerifier.buildPack(
+            "p", "v", MapFixtures.SYNTHETIC_REGION, listOf(MapFixtures.ROUTE), MapFixtures.WAYPOINTS,
+            "2026-01-01T00:00:00Z",
+        )
+        // cambiar metadata del manifiesto (region.name) SIN recalcular el hash → Corrupt
+        val tampered = p.copy(manifest = p.manifest.copy(region = p.manifest.region.copy(name = "OtraRegion")))
+        assertThat(MapPackVerifier.verify(tampered)).isInstanceOf(PackVerification.Corrupt::class.java)
+    }
+
     @Test fun pack_carries_datum_in_manifest() {
         val p = MapPackVerifier.buildPack(
             "p", "v", MapFixtures.SYNTHETIC_REGION, listOf(MapFixtures.ROUTE), MapFixtures.WAYPOINTS,

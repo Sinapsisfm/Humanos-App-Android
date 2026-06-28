@@ -14,9 +14,27 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import java.security.MessageDigest
 
-/** Contenido canónico hasheado: rutas + waypoints (sin el manifiesto, para evitar ciclo). */
+/** Contenido canónico (rutas + waypoints) para el hash de contenido y el tamaño. */
 @Serializable
 private data class PackContent(val routes: List<RouteGeometry>, val waypoints: List<Waypoint>)
+
+/**
+ * Carga AUTENTICADA por el digest del manifiesto: incluye los campos inmutables de
+ * cabecera (packId/version/schema/createdAt/region/datum) + el contenido. Así una
+ * manipulación de la metadata del manifiesto (p.ej. region o datum) también rompe el hash,
+ * no solo cambios en rutas/waypoints. NO incluye contentHash/sizeBytes (evita ciclo).
+ */
+@Serializable
+private data class AuthPayload(
+    val packId: String,
+    val version: String,
+    val schemaVersion: Int,
+    val createdAt: String,
+    val region: MapRegion,
+    val datum: Datum,
+    val routes: List<RouteGeometry>,
+    val waypoints: List<Waypoint>,
+)
 
 sealed interface PackVerification {
     data object Valid : PackVerification
@@ -30,11 +48,20 @@ class MapPackException(message: String) : Exception(message)
 
 object MapPackVerifier {
 
-    /** sha256 hex (minúsculas) del contenido canónico. */
-    fun contentHash(routes: List<RouteGeometry>, waypoints: List<Waypoint>): String {
-        val bytes = canonicalBytes(routes, waypoints)
-        return MessageDigest.getInstance("SHA-256").digest(bytes)
-            .joinToString("") { "%02x".format(it) }
+    /** sha256 hex (minúsculas) del contenido canónico (solo rutas+waypoints). */
+    fun contentHash(routes: List<RouteGeometry>, waypoints: List<Waypoint>): String =
+        sha256Hex(canonicalBytes(routes, waypoints))
+
+    private fun sha256Hex(bytes: ByteArray): String =
+        MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+
+    /** Digest AUTENTICADO (cabecera inmutable + contenido) que va en el manifiesto. */
+    private fun authDigest(
+        packId: String, version: String, schemaVersion: Int, createdAt: String,
+        region: MapRegion, datum: Datum, routes: List<RouteGeometry>, waypoints: List<Waypoint>,
+    ): String {
+        val payload = AuthPayload(packId, version, schemaVersion, createdAt, region, datum, routes, waypoints)
+        return sha256Hex(MapJson.encodeToString(payload).toByteArray(Charsets.UTF_8))
     }
 
     /**
@@ -61,7 +88,8 @@ object MapPackVerifier {
             createdAt = createdAt,
             region = region,
             datum = datum,
-            contentHash = contentHash(routes, waypoints),
+            // digest autenticado: cabecera (region/datum/version/...) + contenido
+            contentHash = authDigest(packId, version, MAPS_SCHEMA_VERSION, createdAt, region, datum, routes, waypoints),
             sizeBytes = bytes.size.toLong(),
         )
         return OfflineMapPack(manifest = manifest, routes = routes, waypoints = waypoints)
@@ -82,9 +110,10 @@ object MapPackVerifier {
         if (bytes.size.toLong() != pack.manifest.sizeBytes) {
             return PackVerification.SizeMismatch(pack.manifest.sizeBytes, bytes.size.toLong())
         }
-        val actual = contentHash(pack.routes, pack.waypoints)
-        if (actual != pack.manifest.contentHash) {
-            return PackVerification.Corrupt(pack.manifest.contentHash, actual)
+        val m = pack.manifest
+        val actual = authDigest(m.packId, m.version, m.schemaVersion, m.createdAt, m.region, m.datum, pack.routes, pack.waypoints)
+        if (actual != m.contentHash) {
+            return PackVerification.Corrupt(m.contentHash, actual)
         }
         return PackVerification.Valid
     }

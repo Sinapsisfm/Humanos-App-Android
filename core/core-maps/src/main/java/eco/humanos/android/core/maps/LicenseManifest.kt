@@ -92,14 +92,18 @@ object LicenseManifestValidator {
         }
         if (structural.isNotEmpty()) return LicenseValidation.Invalid(structural)
 
-        // placeholder: sin proveedor/licencia/hash/redistribución real → no apto para release
+        // placeholder: cualquier campo aún en UNSPECIFIED/ausente → no apto para release
+        fun unset(v: String) = v.isBlank() || v == LicenseManifest.UNSPECIFIED
         val placeholderReasons = buildList {
-            if (m.provider == LicenseManifest.UNSPECIFIED) add("provider UNSPECIFIED (no hay proveedor seleccionado)")
-            if (m.license == LicenseManifest.UNSPECIFIED) add("license UNSPECIFIED")
+            if (unset(m.provider)) add("provider UNSPECIFIED (no hay proveedor seleccionado)")
+            if (unset(m.license)) add("license UNSPECIFIED")
+            if (unset(m.territory)) add("territory UNSPECIFIED")
+            if (unset(m.source)) add("source UNSPECIFIED")
+            if (unset(m.offlineRestrictions)) add("offlineRestrictions UNSPECIFIED")
             if (m.redistribution == RedistributionPolicy.UNSPECIFIED) add("redistribution UNSPECIFIED")
             if (m.sourceHash.isEmpty()) add("sourceHash ausente (dato fuente no verificado)")
             if (m.issuedAt.isEmpty()) add("issuedAt ausente")
-            if (m.attribution.isBlank() || m.attribution == LicenseManifest.UNSPECIFIED) add("attribution ausente")
+            if (unset(m.attribution)) add("attribution ausente")
         }
         if (placeholderReasons.isNotEmpty()) return LicenseValidation.NotReadyForRelease(placeholderReasons)
 
