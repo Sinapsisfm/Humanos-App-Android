@@ -25,6 +25,10 @@ import eco.humanos.android.core.outdoor.domain.PackingInput
 import eco.humanos.android.core.outdoor.domain.ParticipantRole
 import eco.humanos.android.core.outdoor.domain.ScenarioKind
 import eco.humanos.android.core.outdoor.domain.Season
+import eco.humanos.android.core.outdoor.gate.GroupExperience
+import eco.humanos.android.core.outdoor.gate.IsolationLevel
+import eco.humanos.android.core.outdoor.gate.TripConditions
+import eco.humanos.android.core.outdoor.gate.TripContext
 import eco.humanos.android.core.outdoor.repository.InMemoryOutdoorRepository
 import eco.humanos.android.core.outdoor.service.Clock
 import eco.humanos.android.core.outdoor.service.OutdoorService
@@ -36,6 +40,7 @@ fun OutdoorPackingRoute(modifier: Modifier = Modifier) {
     OutdoorPackingScreen(
         state = state,
         onTogglePacked = viewModel::togglePacked,
+        onDismissSignal = viewModel::dismissSignal,
         modifier = modifier,
     )
 }
@@ -45,7 +50,15 @@ private fun buildDemoViewModel(): OutdoorPackingViewModel {
     // Reloj fijo: la demo es determinística (el core prohíbe relojes internos).
     val service = OutdoorService(repo, Clock { "2026-06-27T12:00:00.000Z" })
     service.createCampingOuting("demo", "Camping de demostración", demoInput())
-    return OutdoorPackingViewModel(service, "demo")
+    val ctx = TripContext(
+        conditions = TripConditions(cold = true, rain = true, isolation = IsolationLevel.MODERATE),
+        experience = GroupExperience.INTERMEDIATE,
+        weatherDataAgeHours = 6,
+    )
+    return OutdoorPackingViewModel(
+        service = service, outingId = "demo", tripContext = ctx,
+        now = { "2026-06-27T12:00:00.000Z" }, repoLabel = "in-memory",
+    )
 }
 
 private fun demoInput(): PackingInput = PackingInput(
