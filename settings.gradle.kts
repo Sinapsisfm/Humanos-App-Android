@@ -43,6 +43,7 @@ include(":core:core-ui")
 include(":core:core-observability")
 include(":core:core-update")
 include(":core:core-notifications")
+include(":core:core-outdoor")
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 include(":data:data-auth")
