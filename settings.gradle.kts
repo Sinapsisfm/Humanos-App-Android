@@ -49,6 +49,7 @@ include(":core:core-outdoor")
 include(":data:data-auth")
 include(":data:data-capture")
 include(":data:data-tasks")
+include(":data:data-outdoor")
 
 // ── Feature ──────────────────────────────────────────────────────────────────
 include(":feature:feature-dashboard")
