@@ -92,12 +92,17 @@ android {
             buildConfigField("boolean", "OUTDOOR_R1_ENABLED", "true")
             // Room NO es default: se activa explícitamente y solo con evidencia Android.
             buildConfigField("boolean", "OUTDOOR_ROOM_ENABLED", "false")
+            // R3 mapas (POC aislado): OFF incluso en debug. Solo datos sintéticos, sin
+            // tiles/proveedores/red. Se enciende a mano para experimentar localmente.
+            buildConfigField("boolean", "OUTDOOR_R3_MAPS_ENABLED", "false")
         }
         getByName("release") {
             // OUTDOOR_R1_ENABLED OFF en release/producción: la ruta no se registra y la
             // entrada de laboratorio no se muestra → invisible para usuarios finales.
             buildConfigField("boolean", "OUTDOOR_R1_ENABLED", "false")
             buildConfigField("boolean", "OUTDOOR_ROOM_ENABLED", "false")
+            // R3 mapas (POC aislado): OFF en release/producción → ruta outdoor/maps no existe.
+            buildConfigField("boolean", "OUTDOOR_R3_MAPS_ENABLED", "false")
             // Apply the upload signing config only when a keystore is configured
             // (keystore.properties present). isMinifyEnabled + proguard come from
             // the application convention plugin; release is non-debuggable.
