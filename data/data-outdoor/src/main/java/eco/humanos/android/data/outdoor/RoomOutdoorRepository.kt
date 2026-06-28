@@ -11,6 +11,7 @@
  */
 package eco.humanos.android.data.outdoor
 
+import android.content.Context
 import eco.humanos.android.core.outdoor.domain.CampingPlan
 import eco.humanos.android.core.outdoor.domain.OutdoorOuting
 import eco.humanos.android.core.outdoor.domain.OutingEvent
@@ -19,6 +20,13 @@ import eco.humanos.android.core.outdoor.repository.OutdoorRepository
 import eco.humanos.android.core.outdoor.repository.REPO_SCHEMA_VERSION
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
+
+/**
+ * Factory que devuelve el contrato de dominio `OutdoorRepository` (no expone tipos Room).
+ * Permite al app construir el adaptador Room sin tener androidx.room en su classpath.
+ */
+fun createRoomOutdoorRepository(context: Context): OutdoorRepository =
+    RoomOutdoorRepository(createOutdoorDatabase(context).outdoorDao())
 
 class RoomOutdoorRepository(private val dao: OutdoorDao) : OutdoorRepository {
 

@@ -8,10 +8,19 @@
  */
 package eco.humanos.android.data.outdoor
 
+import android.content.Context
 import androidx.room.Database
+import androidx.room.Room
 import androidx.room.RoomDatabase
 
 const val OUTDOOR_DATABASE_NAME = "outdoor.db"
+
+/**
+ * Factory de la DB Outdoor. Mantiene el uso de Room DENTRO de data-outdoor (el app no
+ * importa androidx.room). Migraciones futuras (aditivas) se agregan aquí.
+ */
+fun createOutdoorDatabase(context: Context): OutdoorDatabase =
+    Room.databaseBuilder(context, OutdoorDatabase::class.java, OUTDOOR_DATABASE_NAME).build()
 
 @Database(
     entities = [

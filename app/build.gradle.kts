@@ -90,11 +90,14 @@ android {
         getByName("debug") {
             // Outdoor R1: vertical interna visible solo en debug (DR-06 con flag).
             buildConfigField("boolean", "OUTDOOR_R1_ENABLED", "true")
+            // Room NO es default: se activa explícitamente y solo con evidencia Android.
+            buildConfigField("boolean", "OUTDOOR_ROOM_ENABLED", "false")
         }
         getByName("release") {
             // OUTDOOR_R1_ENABLED OFF en release/producción: la ruta no se registra y la
             // entrada de laboratorio no se muestra → invisible para usuarios finales.
             buildConfigField("boolean", "OUTDOOR_R1_ENABLED", "false")
+            buildConfigField("boolean", "OUTDOOR_ROOM_ENABLED", "false")
             // Apply the upload signing config only when a keystore is configured
             // (keystore.properties present). isMinifyEnabled + proguard come from
             // the application convention plugin; release is non-debuggable.
@@ -126,6 +129,10 @@ dependencies {
 
     // Data modules
     implementation(project(":data:data-auth"))
+    // Outdoor: contrato de dominio (OutdoorRepository) + adaptador Room. Room se provee
+    // solo si OUTDOOR_ROOM_ENABLED (default in-memory).
+    implementation(project(":core:core-outdoor"))
+    implementation(project(":data:data-outdoor"))
 
     // Firebase (BOM manages versions)
     implementation(platform(libs.firebase.bom))
