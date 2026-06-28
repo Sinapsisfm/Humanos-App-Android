@@ -17,9 +17,7 @@ import eco.humanos.android.core.outdoor.domain.OutdoorOuting
 import eco.humanos.android.core.outdoor.domain.OutingEvent
 import eco.humanos.android.core.outdoor.repository.ExportedOuting
 import eco.humanos.android.core.outdoor.repository.OutdoorRepository
-import eco.humanos.android.core.outdoor.repository.REPO_SCHEMA_VERSION
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
+import eco.humanos.android.core.outdoor.repository.OutdoorSnapshotCodec
 
 /**
  * Factory que devuelve el contrato de dominio `OutdoorRepository` (no expone tipos Room).
@@ -51,21 +49,6 @@ class RoomOutdoorRepository(private val dao: OutdoorDao) : OutdoorRepository {
         return ExportedOuting(exported, getPlan(id), includeSensitive)
     }
 
-    @Serializable
-    private data class PlanEntry(val outingId: String, val plan: CampingPlan)
-
-    @Serializable
-    private data class RoomSnapshot(
-        val schemaVersion: Int,
-        val outings: List<OutdoorOuting>,
-        val plans: List<PlanEntry>,
-        val events: List<OutingEvent>,
-    )
-
-    override fun serialize(): String {
-        val outings = listOutings()
-        val plans = outings.mapNotNull { o -> getPlan(o.id)?.let { PlanEntry(o.id, it) } }
-        val snapshot = RoomSnapshot(REPO_SCHEMA_VERSION, outings, plans, getEvents(null))
-        return OUTDOOR_JSON.encodeToString(snapshot)
-    }
+    /** Usa el códec único → el blob es restaurable en cualquier repositorio (paridad). */
+    override fun serialize(): String = OutdoorSnapshotCodec.encode(this)
 }

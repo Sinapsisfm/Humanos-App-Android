@@ -137,8 +137,11 @@ object AwarenessEvaluator {
     ): List<AwarenessSignal> {
         val gate = TripGate.evaluate(outing, items, ctx, secondary)
         val out = mutableListOf<AwarenessSignal>()
-        fun sig(code: String, sev: SignalSeverity, conf: SignalConfidence, title: String, detail: String, factor: String, ruleId: String, action: String?) {
-            out += AwarenessSignal(code, sev, SignalStance.AMENAZA, conf, title, detail, factor, true, ruleId, action, at, AWARENESS_VERSION)
+        fun sig(
+            code: String, sev: SignalSeverity, conf: SignalConfidence, title: String, detail: String,
+            factor: String, ruleId: String, action: String?, stance: SignalStance = SignalStance.AMENAZA,
+        ) {
+            out += AwarenessSignal(code, sev, stance, conf, title, detail, factor, true, ruleId, action, at, AWARENESS_VERSION)
         }
 
         // Equipo crítico ausente (de blockers del gate).
@@ -197,7 +200,8 @@ object AwarenessEvaluator {
             if (changed > 0) {
                 sig("aware.plan_changed", SignalSeverity.INFO, SignalConfidence.ALTA,
                     "Cambio respecto del plan original", "$changed diferencia(s) en la lista respecto del plan previo.",
-                    "diff_count=$changed", "rule.plan.changed", "Revisar que los cambios sean intencionales.")
+                    "diff_count=$changed", "rule.plan.changed", "Revisar que los cambios sean intencionales.",
+                    stance = SignalStance.NEUTRAL)
             }
         }
         // Acumulación de demasiadas advertencias.

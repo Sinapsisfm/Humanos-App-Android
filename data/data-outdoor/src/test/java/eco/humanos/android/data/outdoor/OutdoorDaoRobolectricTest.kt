@@ -12,6 +12,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import eco.humanos.android.core.outdoor.repository.InMemoryOutdoorRepository
 import eco.humanos.android.core.outdoor.domain.AccessMode
 import eco.humanos.android.core.outdoor.domain.Accommodation
 import eco.humanos.android.core.outdoor.domain.Availability
@@ -78,6 +79,20 @@ class OutdoorDaoRobolectricTest {
         repo.putPlan(o.id, PackingEngine.buildCampingPlan(input()))
         assertThat(repo.getOuting("o1")).isEqualTo(o)
         assertThat(repo.getPlan("o1")).isEqualTo(PackingEngine.buildCampingPlan(input()))
+    }
+
+    @Test fun `serialize de Room es restaurable en in-memory (paridad de snapshot)`() {
+        val repo = RoomOutdoorRepository(db.outdoorDao())
+        repo.putOuting(outing())
+        repo.putPlan("o1", PackingEngine.buildCampingPlan(input()))
+        repo.appendEvent(event("e1"))
+
+        val blob = repo.serialize()
+        val mem = InMemoryOutdoorRepository.restore(blob) // mismo códec → restaurable
+
+        assertThat(mem.getOuting("o1")).isEqualTo(outing())
+        assertThat(mem.getPlan("o1")).isEqualTo(repo.getPlan("o1"))
+        assertThat(mem.getEvents("o1")).isEqualTo(repo.getEvents("o1"))
     }
 
     @Test fun `restore tras cierre - reabrir base de archivo conserva los datos`() {

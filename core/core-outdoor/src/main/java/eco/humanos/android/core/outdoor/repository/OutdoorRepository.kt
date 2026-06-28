@@ -42,15 +42,47 @@ interface OutdoorRepository {
 }
 
 @Serializable
-private data class PlanEntry(val outingId: String, val plan: CampingPlan)
-
-@Serializable
-private data class SerializedState(
+data class OutdoorSnapshot(
     val schemaVersion: Int,
     val outings: List<OutdoorOuting>,
     val plans: List<PlanEntry>,
     val events: List<OutingEvent>,
-)
+) {
+    @Serializable
+    data class PlanEntry(val outingId: String, val plan: CampingPlan)
+}
+
+/**
+ * Códec ÚNICO de snapshot, compartido por todos los adaptadores (in-memory y Room) → un
+ * blob serializado por cualquier repositorio es restaurable en cualquier otro (paridad
+ * serialize/restore). Opera sobre la interfaz `OutdoorRepository`.
+ */
+object OutdoorSnapshotCodec {
+    private val JSON = Json { encodeDefaults = true }
+
+    fun encode(repo: OutdoorRepository): String {
+        val outings = repo.listOutings()
+        val plans = outings.mapNotNull { o -> repo.getPlan(o.id)?.let { OutdoorSnapshot.PlanEntry(o.id, it) } }
+        val snapshot = OutdoorSnapshot(REPO_SCHEMA_VERSION, outings, plans, repo.getEvents(null))
+        return JSON.encodeToString(OutdoorSnapshot.serializer(), snapshot)
+    }
+
+    fun decode(blob: String): OutdoorSnapshot {
+        val s = JSON.decodeFromString(OutdoorSnapshot.serializer(), blob)
+        require(s.schemaVersion == REPO_SCHEMA_VERSION) {
+            "Esquema de repositorio incompatible: ${s.schemaVersion} != $REPO_SCHEMA_VERSION"
+        }
+        return s
+    }
+
+    /** Carga un snapshot en cualquier repositorio (vía la interfaz; idempotente en eventos). */
+    fun load(repo: OutdoorRepository, blob: String) {
+        val s = decode(blob)
+        s.outings.forEach { repo.putOuting(it) }
+        s.plans.forEach { repo.putPlan(it.outingId, it.plan) }
+        s.events.forEach { repo.appendEvent(it) }
+    }
+}
 
 class InMemoryOutdoorRepository : OutdoorRepository {
     private val outings = LinkedHashMap<String, OutdoorOuting>()
@@ -82,30 +114,11 @@ class InMemoryOutdoorRepository : OutdoorRepository {
         return ExportedOuting(exported, plans[id], includeSensitive)
     }
 
-    override fun serialize(): String {
-        val state = SerializedState(
-            schemaVersion = REPO_SCHEMA_VERSION,
-            outings = listOutings(),
-            plans = plans.entries.sortedBy { it.key }.map { PlanEntry(it.key, it.value) },
-            events = getEvents(),
-        )
-        return JSON.encodeToString(SerializedState.serializer(), state)
-    }
+    override fun serialize(): String = OutdoorSnapshotCodec.encode(this)
 
     companion object {
-        private val JSON = Json { encodeDefaults = true }
-
-        /** Reconstruye un repositorio desde un blob serializado (CORE-003 / CORE-008). */
-        fun restore(blob: String): InMemoryOutdoorRepository {
-            val parsed = JSON.decodeFromString(SerializedState.serializer(), blob)
-            require(parsed.schemaVersion == REPO_SCHEMA_VERSION) {
-                "Esquema de repositorio incompatible: ${parsed.schemaVersion} != $REPO_SCHEMA_VERSION"
-            }
-            val repo = InMemoryOutdoorRepository()
-            for (o in parsed.outings) repo.outings[o.id] = o
-            for (p in parsed.plans) repo.plans[p.outingId] = p.plan
-            for (e in parsed.events) repo.events[e.eventId] = e
-            return repo
-        }
+        /** Reconstruye un repositorio in-memory desde un blob (CORE-003 / CORE-008). */
+        fun restore(blob: String): InMemoryOutdoorRepository =
+            InMemoryOutdoorRepository().also { OutdoorSnapshotCodec.load(it, blob) }
     }
 }

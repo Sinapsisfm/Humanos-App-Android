@@ -30,6 +30,10 @@ fun interface Clock {
 data class OutingView(
     val outing: OutdoorOuting,
     val plan: CampingPlan,
+    /**
+     * Señales básicas (omisiones de camping) sin timestamp (`at = null`). Para señales
+     * situacionales con timestamp/regla/acción usar `AwarenessEvaluator.evaluateSituational`.
+     */
     val signals: List<AwarenessSignal>,
 )
 
@@ -87,6 +91,13 @@ class OutdoorService(
         repo.putPlan(outingId, plan)
         emit(outingId, "regen", OutingEventType.PACKING_GENERATED, SourceType.DETERMINISTIC_INFERENCE, now)
         return view(outing, plan)
+    }
+
+    /** Registra el reconocimiento/descarte de una señal en la bitácora (idempotente). */
+    fun recordSignalDismissed(outingId: String, code: String): Boolean {
+        if (repo.getOuting(outingId) == null) return false
+        emit(outingId, "dismiss:$code", OutingEventType.AWARENESS_SIGNAL_DISMISSED, SourceType.USER_DECLARATION, clock.nowIso())
+        return true
     }
 
     /** Señales situacionales sobre el plan actual (no certifican seguridad). */

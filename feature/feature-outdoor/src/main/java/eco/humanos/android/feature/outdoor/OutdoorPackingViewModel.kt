@@ -68,9 +68,9 @@ class OutdoorPackingViewModel(
         _uiState.value = buildState()
     }
 
-    /** Reconoce/descarta una señal descartable; persiste en el VM (restaurable). */
+    /** Reconoce/descarta una señal descartable; lo registra en bitácora y en el VM. */
     fun dismissSignal(code: String) {
-        dismissed.add(code)
+        if (dismissed.add(code)) service.recordSignalDismissed(outingId, code)
         _uiState.value = buildState()
     }
 

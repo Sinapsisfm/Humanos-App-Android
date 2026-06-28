@@ -50,6 +50,7 @@ import eco.humanos.android.core.outdoor.awareness.AwarenessSignal
 import eco.humanos.android.core.outdoor.awareness.SignalSeverity
 import eco.humanos.android.core.outdoor.gate.ComplexityClass
 import eco.humanos.android.core.outdoor.gate.Finding
+import eco.humanos.android.core.outdoor.gate.FindingSeverity
 import eco.humanos.android.core.outdoor.gate.ReadinessState
 import eco.humanos.android.core.outdoor.gate.TripGateResult
 
@@ -178,13 +179,20 @@ private fun SectionLabel(text: String) {
     Text(text, style = MaterialTheme.typography.titleSmall)
 }
 
+private fun findingBadge(severity: FindingSeverity): Badge = when (severity) {
+    FindingSeverity.BLOCKER -> Badge(Icons.Filled.Warning, "Bloqueante")
+    FindingSeverity.WARNING -> Badge(Icons.Outlined.Warning, "Advertencia")
+    FindingSeverity.INFO -> Badge(Icons.Outlined.Info, "Info")
+}
+
 @Composable
 private fun FindingRow(finding: Finding) {
+    val badge = findingBadge(finding.severity)
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-        Icon(Icons.Filled.Warning, contentDescription = "Bloqueante")
+        Icon(badge.icon, contentDescription = badge.label)
         Spacer(Modifier.width(8.dp))
         Column {
-            Text(finding.title, style = MaterialTheme.typography.bodyMedium)
+            Text("${badge.label} · ${finding.title}", style = MaterialTheme.typography.bodyMedium)
             Text(finding.detail, style = MaterialTheme.typography.bodySmall)
             finding.recommendation?.let { Text("→ $it", style = MaterialTheme.typography.bodySmall) }
         }

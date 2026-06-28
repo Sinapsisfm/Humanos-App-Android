@@ -6,7 +6,10 @@
  *    sin cambios.
  *  - `RoomOutdoorRepository` SOLO si `BuildConfig.OUTDOOR_ROOM_ENABLED` (flag interno,
  *    default false en todos los build types) → Room NO es default hasta tener evidencia.
- *  - en tests, este módulo se reemplaza vía `@TestInstallIn` con un fake.
+ *
+ * La lógica de selección es pura y está unit-testeada (`OutdoorRepositorySelectorTest`).
+ * Para reemplazar este binding por un fake en tests instrumentados/Robolectric de grafo
+ * Hilt se usaría `@TestInstallIn` + `HiltAndroidTest` (no incluido aún en este entorno).
  *
  * No hay segundo service locator: Hilt resuelve la composición. `core-outdoor` no se acopla
  * a Android/Room/Hilt (la interfaz vive en core; los adapters en data/core).
