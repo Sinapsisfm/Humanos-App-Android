@@ -23,22 +23,32 @@ class GpxParseException(message: String, cause: Throwable? = null) : Exception(m
 object GpxParser {
 
     fun parse(gpx: String): GpxDocument {
+        // límite de tamaño (fail-closed) ANTES de parsear
+        val bytes = gpx.toByteArray(Charsets.UTF_8)
+        if (bytes.size > MAX_GPX_BYTES) {
+            throw GpxParseException("GPX excede el límite de tamaño (${bytes.size} > $MAX_GPX_BYTES bytes)")
+        }
         val doc = try {
-            secureFactory().newDocumentBuilder()
-                .parse(ByteArrayInputStream(gpx.toByteArray(Charsets.UTF_8)))
+            secureFactory().newDocumentBuilder().parse(ByteArrayInputStream(bytes))
         } catch (t: Throwable) {
             throw GpxParseException("GPX inválido: ${t.message}", t)
         }
         doc.documentElement.normalize()
 
+        // límite de nº de elementos (fail-closed) antes de materializar
+        val totalElements = doc.byTag("trkpt").size + doc.byTag("rtept").size + doc.byTag("wpt").size
+        if (totalElements > MAX_GPX_ELEMENTS) {
+            throw GpxParseException("GPX excede el límite de elementos ($totalElements > $MAX_GPX_ELEMENTS)")
+        }
+
         val tracks = ArrayList<RouteGeometry>()
         doc.byTag("trk").forEachIndexed { i, trk ->
             val pts = trk.descendants("trkpt").map { it.toGeoPoint() }
-            if (pts.isNotEmpty()) tracks.add(RouteGeometry(id = "trk-$i", points = pts))
+            if (pts.isNotEmpty()) tracks.add(RouteGeometry(id = "trk-$i", points = pts, source = PositionSource.IMPORT_GPX))
         }
         doc.byTag("rte").forEachIndexed { i, rte ->
             val pts = rte.descendants("rtept").map { it.toGeoPoint() }
-            if (pts.isNotEmpty()) tracks.add(RouteGeometry(id = "rte-$i", points = pts))
+            if (pts.isNotEmpty()) tracks.add(RouteGeometry(id = "rte-$i", points = pts, source = PositionSource.IMPORT_GPX))
         }
         val waypoints = doc.byTag("wpt").mapIndexed { i, wpt ->
             val g = wpt.toGeoPoint()
@@ -77,7 +87,10 @@ object GpxParser {
             ?: throw GpxParseException("punto sin lat")
         val lon = getAttribute("lon").toDoubleOrNull()
             ?: throw GpxParseException("punto sin lon")
-        return GeoPoint(lat = lat, lon = lon, ele = childText("ele")?.toDoubleOrNull())
+        val p = GeoPoint(lat = lat, lon = lon, ele = childText("ele")?.toDoubleOrNull())
+        // fail-closed: rechazar NaN/Inf y coordenadas fuera de rango
+        if (!p.isValid()) throw GpxParseException("coordenada inválida lat=$lat lon=$lon")
+        return p
     }
 
     private fun Element.childText(tag: String): String? {
