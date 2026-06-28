@@ -87,7 +87,14 @@ android {
     }
 
     buildTypes {
+        getByName("debug") {
+            // Outdoor R1: vertical interna visible solo en debug (DR-06 con flag).
+            buildConfigField("boolean", "OUTDOOR_R1_ENABLED", "true")
+        }
         getByName("release") {
+            // OUTDOOR_R1_ENABLED OFF en release/producción: la ruta no se registra y la
+            // entrada de laboratorio no se muestra → invisible para usuarios finales.
+            buildConfigField("boolean", "OUTDOOR_R1_ENABLED", "false")
             // Apply the upload signing config only when a keystore is configured
             // (keystore.properties present). isMinifyEnabled + proguard come from
             // the application convention plugin; release is non-debuggable.
@@ -105,6 +112,7 @@ dependencies {
     implementation(project(":feature:feature-settings"))
     implementation(project(":feature:feature-tasks"))
     implementation(project(":feature:feature-web"))
+    implementation(project(":feature:feature-outdoor"))
 
     // Core modules
     implementation(project(":core:core-ui"))

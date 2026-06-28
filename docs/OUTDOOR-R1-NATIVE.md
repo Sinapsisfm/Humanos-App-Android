@@ -21,25 +21,33 @@ export JAVA_HOME="C:\Program Files\Android\Android Studio\jbr"   # o el JBR loca
 ./gradlew :feature:feature-outdoor:testDebugUnitTest   # 3 verde
 ```
 
-## Cómo cablear a la app (cuando Felipe lo apruebe — DR-06)
+## Integración con feature flag — HECHO (Fase B, DR-06 aprobado con flag)
 
-Hoy NO está cableado para no hacerlo visible al usuario sin aprobación. Para activarlo:
+Cableado de forma reversible y **OFF en release/producción**:
 
-1. **`app/build.gradle.kts`** → agregar `implementation(project(":feature:feature-outdoor"))`.
-2. **`app/.../navigation/TopLevelDestination.kt`** → agregar entrada:
-   ```kotlin
-   OUTDOOR(route = "outdoor", label = "Acampar", selectedIcon = ..., unselectedIcon = ...)
-   ```
-3. **`app/.../navigation/HumanosNavHost.kt`** → agregar:
-   ```kotlin
-   composable(TopLevelDestination.OUTDOOR.route) {
-       // construir OutdoorService(repo, clock) + crear/abrir una salida y pasar el estado
-       OutdoorPackingScreen(state = ..., onTogglePacked = ...)
-   }
-   ```
-4. Para inyección real: `@HiltViewModel` + un `@Module` que provea `OutdoorRepository`
-   (ver Room abajo) y un `Clock` (System). Hoy el ViewModel es plano para mantener el
-   módulo aislado y unit-testeable.
+- **Flag:** `BuildConfig.OUTDOOR_R1_ENABLED` (mecanismo existente del repo). `app/build.gradle.kts`
+  buildTypes: **debug = true**, **release = false**.
+- **Dependencia:** `app` → `implementation(project(":feature:feature-outdoor"))`.
+- **Ruta:** `HumanosNavHost.kt` registra `composable("outdoor")` **solo si el flag está ON**
+  → en release la ruta no existe (inaccesible).
+- **Entrada provisional:** `SettingsScreen` (pantalla nativa alcanzable desde el shell web,
+  "Config") gana un parámetro **opcional** `onOpenOutdoor` (default `null`); el host lo
+  provee solo con el flag ON → ítem "Outdoor R1 (laboratorio)". Default null → sin cambios
+  en release ni en tests existentes. **No se rediseñó la navegación global** (la app es
+  web-first; no hay bottom bar).
+- **Entrada de UI:** `OutdoorPackingRoute()` (en `:feature:feature-outdoor`) construye un
+  servicio in-memory + salida de demostración y renderiza la pantalla (no toca la DB de la app).
+
+### Evidencia (verificada)
+- Build flag ON: `:app:compileSideloadDebugKotlin` ✓.
+- Build flag OFF: `:app:compileSideloadReleaseKotlin` ✓.
+- Ruta inaccesible con flag OFF: gating en compile-time (`if (BuildConfig.OUTDOOR_R1_ENABLED)`)
+  + entrada de Settings `null` en release. Probado por compilación release + lectura de código.
+- Sin regresiones de nav: solo se agrega ruta flag-gated + un parámetro opcional default-null;
+  rutas existentes intactas. Tests `:feature:feature-settings:testDebugUnitTest`,
+  `:feature:feature-outdoor:testDebugUnitTest`, `:core:core-outdoor:test` verdes.
+- **Pendiente (requiere dispositivo/emulador):** apertura real de la pantalla con flag ON y
+  recorrido del flujo camping en runtime. No se declara verificado sin esa evidencia.
 
 ## Persistencia: próximo paso = adaptador Room (DR-04, gated)
 
