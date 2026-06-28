@@ -17,6 +17,8 @@ android {
 
 dependencies {
     implementation(project(":core:core-outdoor"))
+    // R3 mapas (POC): contratos de dominio cartográfico (sin MapLibre/proveedor/red).
+    implementation(project(":core:core-maps"))
 
     testImplementation(project(":testing:testing-common"))
     testImplementation(libs.junit)

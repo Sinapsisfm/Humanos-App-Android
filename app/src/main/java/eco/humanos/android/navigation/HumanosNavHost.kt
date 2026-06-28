@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import eco.humanos.android.BuildConfig
 import eco.humanos.android.feature.capture.CaptureScreen
 import eco.humanos.android.feature.dashboard.DashboardScreen
+import eco.humanos.android.feature.outdoor.OutdoorMapsPocRoute
 import eco.humanos.android.feature.outdoor.OutdoorPackingRoute
 import eco.humanos.android.feature.settings.SettingsScreen
 import eco.humanos.android.feature.tasks.TasksScreen
@@ -78,6 +79,13 @@ fun HumanosNavHost(
         if (BuildConfig.OUTDOOR_R1_ENABLED) {
             composable("outdoor") {
                 OutdoorPackingRoute()
+            }
+        }
+        // R3 mapas (POC): ruta registrada SOLO con AMBOS flags (R1 + R3). OUTDOOR_R3_MAPS_ENABLED
+        // es false por defecto → la ruta no existe → POC inaccesible salvo encendido manual.
+        if (BuildConfig.OUTDOOR_R1_ENABLED && BuildConfig.OUTDOOR_R3_MAPS_ENABLED) {
+            composable("outdoor/maps") {
+                OutdoorMapsPocRoute()
             }
         }
     }

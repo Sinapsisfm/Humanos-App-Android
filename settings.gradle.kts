@@ -44,6 +44,7 @@ include(":core:core-observability")
 include(":core:core-update")
 include(":core:core-notifications")
 include(":core:core-outdoor")
+include(":core:core-maps")
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 include(":data:data-auth")
