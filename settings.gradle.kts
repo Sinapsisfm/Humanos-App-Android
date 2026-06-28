@@ -56,6 +56,7 @@ include(":feature:feature-capture")
 include(":feature:feature-settings")
 include(":feature:feature-tasks")
 include(":feature:feature-web")
+include(":feature:feature-outdoor")
 
 // ── Integrations ─────────────────────────────────────────────────────────────
 include(":integrations:integration-humanos")
