@@ -18,7 +18,7 @@ class PackingEngineTest {
     }
 
     @Test fun `version de ruleset estable`() {
-        assertThat(RULESET_VERSION).isEqualTo("camping-cl.v0.1.0")
+        assertThat(RULESET_VERSION).isEqualTo("camping-cl.v0.2.0")
         assertThat(PackingEngine.buildCampingPlan(Fixtures.packingInput()).rulesetVersion).isEqualTo(RULESET_VERSION)
     }
 

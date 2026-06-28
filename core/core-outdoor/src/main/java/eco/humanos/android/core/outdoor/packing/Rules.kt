@@ -11,7 +11,8 @@ import eco.humanos.android.core.outdoor.domain.ItemClassification
 import eco.humanos.android.core.outdoor.domain.PackingCategory
 import eco.humanos.android.core.outdoor.domain.PackingInput
 
-const val RULESET_VERSION = "camping-cl.v0.1.0"
+// v0.2.0: agrega capa estacional fría-húmeda (Araucanía, KP-011 / PACK-015).
+const val RULESET_VERSION = "camping-cl.v0.2.0"
 
 class PackingRule(
     val id: String,
@@ -108,6 +109,19 @@ val CAMPING_RULES: List<PackingRule> = listOf(
         explain = { "Electricidad ${it.facility.electricity}: respaldo de carga." }),
     PackingRule("documents.id", PackingCategory.DOCUMENTS, ItemClassification.RECOMMENDED, "Documentos y llaves", "set",
         applies = { true }, quantity = { 1 }, explain = { "Identificación, llaves y datos de contacto." }),
+    // ── Capa estacional fría-húmeda (Araucanía base, KP-011) — se activa por estación ──
+    PackingRule("winter.waterproof_shell", PackingCategory.SUN_RAIN, ItemClassification.MANDATORY, "Capa impermeable (shell)", "shell",
+        applies = { coldSeason(it) }, quantity = { people(it) },
+        explain = { "Araucanía frío-húmedo: capa impermeable obligatoria por persona en temporada fría." }),
+    PackingRule("winter.gloves_hat", PackingCategory.CLOTHING, ItemClassification.MANDATORY, "Guantes y gorro", "set",
+        applies = { it.season.name == "INVIERNO" }, quantity = { people(it) },
+        explain = { "Invierno: guantes y gorro por persona (pérdida de calor por extremidades/cabeza)." }),
+    PackingRule("winter.insulation", PackingCategory.SLEEP, ItemClassification.MANDATORY, "Aislamiento térmico reforzado", "set",
+        applies = { it.season.name == "INVIERNO" && it.nights > 0 }, quantity = { people(it) },
+        explain = { "Invierno con pernoctación: aislamiento térmico reforzado para el frío." }),
+    PackingRule("winter.traction", PackingCategory.TOOLS, ItemClassification.RECOMMENDED, "Tracción para hielo", "par",
+        applies = { it.season.name == "INVIERNO" }, quantity = { maxOf(1, Math.ceil(adults(it) / 2.0).toInt()) },
+        explain = { "Posible hielo/barro: tracción ligera (cadenas/grampones) para el grupo." }),
 )
 
 val CAMPING_PREP_TASKS: List<PrepTaskRule> = listOf(
