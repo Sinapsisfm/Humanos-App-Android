@@ -18,6 +18,14 @@ const val OUTDOOR_DATABASE_NAME = "outdoor.db"
 /**
  * Factory de la DB Outdoor. Mantiene el uso de Room DENTRO de data-outdoor (el app no
  * importa androidx.room). Migraciones futuras (aditivas) se agregan aquí.
+ *
+ * NOTA DE ACTIVACIÓN (NIT-2 del review): `OutdoorRepository` es SÍNCRONO por contrato y
+ * `RoomOutdoorRepository` ejecuta queries Room de forma síncrona. Room prohíbe queries en
+ * el main thread. Hoy Room está OFF por defecto (OUTDOOR_ROOM_ENABLED=false), así que no
+ * aplica. Al ACTIVAR Room hay que invocar el repositorio FUERA del main thread (p.ej. el
+ * ViewModel debe usar viewModelScope + Dispatchers.IO); NO usar allowMainThreadQueries en
+ * producción. Este factory deja la DB lista; la disciplina de hilo es responsabilidad del
+ * consumidor al momento de la activación.
  */
 fun createOutdoorDatabase(context: Context): OutdoorDatabase =
     Room.databaseBuilder(context, OutdoorDatabase::class.java, OUTDOOR_DATABASE_NAME).build()

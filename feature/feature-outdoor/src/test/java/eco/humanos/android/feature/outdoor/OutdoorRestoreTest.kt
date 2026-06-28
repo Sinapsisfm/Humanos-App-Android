@@ -41,12 +41,18 @@ class OutdoorRestoreTest {
         ),
     )
 
-    @Test fun `recomposicion - el estado es estable`() {
+    @Test fun `recomposicion - el estado tiene contenido y es estable`() {
         val repo = InMemoryOutdoorRepository()
         val service = OutdoorService(repo, Clock { AT })
         service.createCampingOuting("o1", "Camping", input())
         val vm = OutdoorPackingViewModel(service, "o1", now = { AT })
-        assertThat(vm.uiState.value).isEqualTo(vm.uiState.value)
+        val s = vm.uiState.value
+        // contenido real (no solo "value == value"): título, grupos y gate presentes
+        assertThat(s.title).isEqualTo("Camping")
+        assertThat(s.groups).isNotEmpty()
+        assertThat(s.gate).isNotNull()
+        // estable entre lecturas (recomposición no recomputa ni muta)
+        assertThat(vm.uiState.value).isSameInstanceAs(s)
     }
 
     @Test fun `recreacion de Activity - initialDismissed conserva el reconocimiento`() {
